@@ -1,4 +1,5 @@
 from agents.signal_agents import ma_agent
+from agents import broker_agent
 import logging
 
 class Controller():
@@ -8,7 +9,8 @@ class Controller():
 
     def register_agents(self):
         logging.info('Registering Agents...')
-        maAgent = ma_agent.MAAgent()
+        broker = broker_agent.BrokerAgent()
+        maAgent = ma_agent.MAAgent(broker)
         self.agents.append(maAgent)
         logging.info(f'{len(self.agents)} agents registered...')
 
