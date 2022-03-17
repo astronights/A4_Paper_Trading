@@ -1,19 +1,20 @@
 import time
-from base_agent import BaseAgent
-from threading import Thread,Lock
+import logging
+from .base_agent import BaseAgent
+from threading import Thread
 from config import constants
 
 class MAAgent(BaseAgent):
     
         def __init__(self):
-            self.signals = []
-            self.thread = Thread(name = self.__str__(), target = self.run)
-            self.thread.start()
+            super().__init__()
     
         def run(self):
             while True:
-                self.tick()
+                self.signal()
                 time.sleep(constants.TICK)
     
         def signal(self):
-            print(f'Here {self.__str__()}')
+            self.lock.acquire()
+            logging.info(f'Here {self.__str__()}')
+            self.lock.release()
