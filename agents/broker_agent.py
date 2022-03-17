@@ -3,10 +3,12 @@ import pandas as pd
 from datetime import datetime
 from config.constants import *
 from config.hitbtc import *
+import logging
 
 class BrokerAgent():
 
     def __init__(self):
+        logging.info(f'BrokerAgent created...')
         self.ohlcv_limit = 100
         self.price_col = 'Close'
         self.hitbtc = ccxt.hitbtc({'apiKey': apiKey, 'secret': secret,
@@ -51,4 +53,4 @@ class BrokerAgent():
         return res['status']
 
     def cancel_order(self, orderId, symbol):
-        res = self.hitbtc.cancel_order(orderId, symbol)
+        self.hitbtc.cancel_order(orderId, symbol)
