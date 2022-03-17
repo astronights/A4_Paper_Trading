@@ -16,5 +16,5 @@ class MAAgent(BaseAgent):
     
         def signal(self):
             self.lock.acquire()
-            logging.info(f'Here {self.__str__()}')
+            print(f'Here {self.__str__()}')
             self.lock.release()
