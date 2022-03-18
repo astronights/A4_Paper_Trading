@@ -8,11 +8,12 @@ import logging
 class BrokerAgent():
 
     def __init__(self):
-        logging.info(f'BrokerAgent created...')
         self.ohlcv_limit = 100
         self.price_col = 'Close'
         self.hitbtc = ccxt.hitbtc({'apiKey': apiKey, 'secret': secret,
                           'urls': {'api': {'private': 'https://api.demo.hitbtc.com'}}})
+        logging.info('Established connection to HitBTC')
+        logging.info(f'Created {self.__class__.__name__}')
 
     def get_balance(self, symbol):
         balance = self.hitbtc.fetch_balance({'type': 'trading'})

@@ -27,3 +27,4 @@ class MAAgent(BaseSignalAgent):
         df.drop([f'MA_Position'], axis=1, inplace=True)
         self.signals.append(df.iloc[-1][f'MA_Signal'])
         self.lock.release()
+        logging.info(f'MA Signal: {self.signals[-1]}')

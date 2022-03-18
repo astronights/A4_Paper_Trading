@@ -7,5 +7,5 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 if __name__=='__main__':
-    logging.info(f'Starting app...')
+    logging.info(f'Starting app')
     run.run()

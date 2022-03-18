@@ -2,7 +2,7 @@ import pyarrow as pa
 import pyarrow.csv as csv
 
 def df_to_csv(df, filename):
-    df_pa_table = pa.Table.from_pandas(df)
+    df_pa_table = pa.Table.from_pandas(df, preserve_index=False)
     csv.write_csv(df_pa_table, filename)
 
 def csv_to_df(filename):
