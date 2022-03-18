@@ -1,5 +1,10 @@
 import pyarrow as pa
 import pyarrow.csv as csv
+from enum import Enum
+
+class Type(Enum):
+    AGENT_WEIGHTS = 'agent_weights.csv'
+    ACCOUNT_BOOK = 'account_book.csv'
 
 def df_to_csv(df, filename):
     df_pa_table = pa.Table.from_pandas(df, preserve_index=False)
