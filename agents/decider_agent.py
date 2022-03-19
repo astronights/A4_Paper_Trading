@@ -24,6 +24,7 @@ class DeciderAgent(BaseAgent):
         #TODO: Calculate action and quantity using some algorithm
         weights = self.dao_agent.get_last_data(Type.AGENT_WEIGHTS).to_dict()
         latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
+        logging.info(f'Agent Signals: {latest_actions}')
         action = [weights[agent_name] * latest_actions[agent_name] for agent_name in weights.keys()]
         self.trade['action'] = action
         self.trade['quantity'] = 10.0
