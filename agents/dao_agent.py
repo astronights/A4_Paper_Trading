@@ -11,7 +11,7 @@ class DAOAgent():
     def __init__(self):
         # DataFrame consisting of order data
         # Rows order data
-        # Column: client_order_id, type, price, quantity, status, created_at, updated_at, symbol, open, high, low, close, agent_weights
+        # Column: client_order_id, type, price, quantity, status, created_at, updated_at, symbol, open, high, low, close, agent_weights, balance
         # Index timestamp
         self.account_book = None
         # DataFrame consisting of the weights of the agents
