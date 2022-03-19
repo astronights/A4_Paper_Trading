@@ -1,16 +1,13 @@
 import ccxt
 import pandas as pd
 from datetime import datetime
-from config.constants import *
-from config.hitbtc import *
+from config import constants, hitbtc
 import logging
 
 class BrokerAgent():
 
     def __init__(self):
-        self.ohlcv_limit = 100
-        self.price_col = 'Close'
-        self.hitbtc = ccxt.hitbtc({'apiKey': apiKey, 'secret': secret,
+        self.hitbtc = ccxt.hitbtc({'apiKey': hitbtc.apiKey, 'secret': hitbtc.secret,
                           'urls': {'api': {'private': 'https://api.demo.hitbtc.com'}}})
         logging.info('Established connection to HitBTC')
         logging.info(f'Created {self.__class__.__name__}')
@@ -21,8 +18,8 @@ class BrokerAgent():
             return balance['info'][symbol]['available']
         return None
 
-    def ohlcv_data(self, symbol):
-        ohlcv = self.hitbtc.fetch_ohlcv(symbol, TIMEFRAME, self.ohlcv_limit, params={'sort': 'DESC'})
+    def ohlcv_data(self, symbol, timeframe=constants.TIMEFRAME, limit=constants.LIMIT):
+        ohlcv = self.hitbtc.fetch_ohlcv(symbol, timeframe, limit, params={'sort': 'DESC'})
         df = pd.DataFrame(ohlcv, columns=['TimeStamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
         df.index = df.TimeStamp.apply(lambda x: datetime.fromtimestamp(x / 1000.0))
         df.drop(['TimeStamp'], axis=1, inplace=True)
@@ -30,7 +27,6 @@ class BrokerAgent():
 
     def ticker_price(self, symbol):
         ticker_price = self.hitbtc.fetch_ticker(symbol)['info']
-        print(ticker_price)
         return (float(ticker_price['bid']) + float(ticker_price['ask'])/2)
 
     def market_buy_order(self, symbol, amount):

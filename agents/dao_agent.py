@@ -2,30 +2,45 @@ import os
 from config import constants
 from utils.io_utils import *
 import logging
+import numpy as np
 import pandas as pd
+from datetime import datetime
 
 class DAOAgent():
 
     def __init__(self):
+        # DataFrame consisting of order data
+        # Rows order data
+        # Column: client_order_id, type, price, quantity, status, created_at, updated_at, symbol, open, high, low, close, agent_weights
+        # Index timestamp
         self.account_book = None
+        # DataFrame consisting of the weights of the agents
+        # Rows weights
+        # Column agent name
+        # Index timestamp
         self.agent_weights = None
         logging.info(f'Created {self.__class__.__name__}')
 
     def add_data(self, data, type):
+        now = datetime.now()
         if(type == Type.ACCOUNT_BOOK):
             if(self.account_book is None):
-                self.account_book = pd.DataFrame(data, index=[0])
+                self.account_book = pd.DataFrame(data, index=[now])
             else:
                 df = pd.DataFrame(data, index=[len(self.account_book)])
                 df = pd.concat([self.account_book, df], axis=0, copy=False)
                 self.account_book = df
         else:
             if(self.agent_weights is None):
-                self.agent_weights = pd.DataFrame(data, index=[0])
+                self.agent_weights = pd.DataFrame(data, index=[now])
             else:
                 df = pd.DataFrame(data, index=[len(self.agent_weights)])
-                df = pd.concat([self.agent_weights, df], axis=0, copy=False)
-                self.agent_weights = df
+                last_row_df = self.agent_weights.iloc[-1]
+                if(np.array_equal(last_row_df.values,df.values)):
+                    pass
+                else:
+                    df = pd.concat([self.agent_weights, df], axis=0, copy=False)
+                    self.agent_weights = df
 
     def get_last_data(self, type):
         if(type == Type.ACCOUNT_BOOK):
