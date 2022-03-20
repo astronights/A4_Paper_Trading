@@ -4,7 +4,6 @@ import numpy as np
 from .base_signal_agent import BaseSignalAgent
 from threading import Thread
 from config import constants
-from config.constants import *
 
 class MAAgent(BaseSignalAgent):
     
@@ -19,9 +18,9 @@ class MAAgent(BaseSignalAgent):
 
     def signal(self):
         self.lock.acquire()
-        df = self.broker_agent.ohlcv_data(SYMBOL)
-        df['EMA_10'] = df[self.broker_agent.price_col].ewm(span=10, adjust = False).mean()
-        df['SMA_50'] = df[self.broker_agent.price_col].rolling(50).mean()
+        df = self.broker_agent.ohlcv_data(constants.SYMBOL)
+        df['EMA_10'] = df[constants.PRICE_COL].ewm(span=10, adjust = False).mean()
+        df['SMA_50'] = df[constants.PRICE_COL].rolling(50).mean()
         df[f'MA_Position'] = np.where(df[f'EMA_10'] > df[f'SMA_50'], 1.0, 0.0)
         df[f'MA_Signal'] = df[f'MA_Position'].diff()
         df.drop([f'MA_Position'], axis=1, inplace=True)

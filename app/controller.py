@@ -1,5 +1,5 @@
 from agents.signal_agents import ma_agent, random_agent
-from agents import broker_agent, decider_agent, dao_agent, backtesting_agent, ceo_agent, pnl_agent, powerbi_agent
+from agents import broker_agent, decider_agent, dao_agent, backtesting_agent, ceo_agent, macroecon_agent, pnl_agent, powerbi_agent
 import logging
 
 class Controller():
@@ -17,6 +17,8 @@ class Controller():
         randomAgent = random_agent.RandomAgent()
         self.signal_agents.extend([maAgent, randomAgent])
 
+        macroecon = macroecon_agent.MacroEconAgent()
+
         pnl = pnl_agent.PNLAgent(broker, dao)
         ceo = ceo_agent.CEOAgent(broker, dao)
         powerbi = powerbi_agent.PowerBIAgent(broker, dao)
@@ -24,7 +26,7 @@ class Controller():
         backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)
         decider = decider_agent.DeciderAgent(self.signal_agents, dao, ceo)
 
-        self.periodic_agents.extend([pnl, backtesting, decider, powerbi])
+        self.periodic_agents.extend([macroecon, pnl, backtesting, decider, powerbi])
         logging.info('Registered agents')
 
     def start_agents(self):

@@ -19,7 +19,7 @@ class CEOAgent():
                 order = self.broker_agent.market_buy_order(constants.COIN, trade['quantity'])
             elif(trade['type'] == -1):
                 order = self.broker_agent.market_sell_order(constants.COIN, trade['quantity'])
-            trade = self._populate_trade_order(trade, order)
+            # trade = self._populate_trade_order(trade, order)
             self.dao_agent.add_data(trade, Type.ACCOUNT_BOOK)
         else:
             pass
