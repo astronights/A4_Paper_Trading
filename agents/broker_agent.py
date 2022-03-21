@@ -1,7 +1,10 @@
+from alpaca_trade_api.rest import REST, TimeFrame, TimeFrameUnit
+from alpaca_trade_api.common import URL
+from config import alpaca, constants, hitbtc
+from utils import datetime_utils
 import ccxt
 import pandas as pd
 from datetime import datetime
-from config import constants, hitbtc
 import logging
 
 class BrokerAgent():
@@ -10,44 +13,69 @@ class BrokerAgent():
         self.hitbtc = ccxt.hitbtc({'apiKey': hitbtc.apiKey, 'secret': hitbtc.secret,
                           'urls': {'api': {'private': 'https://api.demo.hitbtc.com'}}})
         logging.info('Established connection to HitBTC')
+        self.url = URL('https://paper-api.alpaca.markets')
+        self.api = REST(key_id=alpaca.CLIENT_ID,
+                secret_key=alpaca.CLIENT_SECRET,
+                base_url=self.url)
+        self.account = None
+        self.position = None
+        logging.info('Established connection to Alpaca')
         logging.info(f'Created {self.__class__.__name__}')
 
-    def get_balance(self, symbol):
-        balance = self.hitbtc.fetch_balance({'type': 'trading'})
-        if(symbol in balance['info'].keys()):
-            return balance['info'][symbol]['available']
-        return None
+    def get_balance(self, symbol=None):
+        self.account = self.api.get_account()._raw
+        self.position = self.api.get_position(symbol)._raw
+        if(symbol is None):
+            return self.account['cash']
+        else:
+            return(self.position['qty'])
 
-    def ohlcv_data(self, symbol, limit=constants.LIMIT, timeframe=constants.TIMEFRAME):
-        ohlcv = self.hitbtc.fetch_ohlcv(symbol, timeframe, limit, params={'sort': 'DESC'})
-        df = pd.DataFrame(ohlcv, columns=['TimeStamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-        df.index = df.TimeStamp.apply(lambda x: datetime.fromtimestamp(x / 1000.0))
-        df.drop(['TimeStamp'], axis=1, inplace=True)
-        return df
+    def ohlcv_data(self, symbol, timeframe=constants.TIMEFRAME):
+        since = datetime_utils.get_n_deltas_before_str(constants.LIMIT)
+        to = datetime_utils.get_today_str()
+        ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), since, to, None, [alpaca.EXCHANGE]).df
+        ohlcv.index = datetime_utils.convert_gmt_to_local(ohlcv.index)
+        ohlcv.drop(['exchange', 'trade_count', 'vwap'], axis=1, inplace=True)
+        ohlcv.columns=['Open', 'High', 'Low', 'Close', 'Volume']
+        ohlcv.index.rename('Timestamp', inplace=True)
+        return(ohlcv)
+
+    #TODO: Why is not working?
+    def latest_ohlcv(self, symbol):
+        latest = self.api.get_latest_crypto_bars(symbol, alpaca.EXCHANGE)._raw
+        print(latest)
 
     def ticker_price(self, symbol):
-        ticker_price = self.hitbtc.fetch_ticker(symbol)['info']
-        return (float(ticker_price['bid']) + float(ticker_price['ask'])/2)
-
+        quote = self.api.get_latest_crypto_quote(symbol, alpaca.EXCHANGE)._raw
+        ticker = (float(quote['ap']) + float(quote['bp']))/2
+        return(ticker)
+        
     def market_buy_order(self, symbol, amount):
-        res = self.hitbtc.create_market_buy_order(symbol, amount)
+        res = self.api.submit_order(symbol, amount, 'buy')._raw
         return res
 
     def market_sell_order(self, symbol, amount):
-        res = self.hitbtc.create_market_sell_order(symbol, amount)
+        res = self.api.submit_order(symbol, amount, 'sell')._raw
         return res
 
     def limit_buy_order(self, symbol, amount, price):
-        res = self.hitbtc.create_limit_buy_order(symbol, amount, price)
+        res = self.api.submit_order(symbol, amount, 'buy', 'limit', 'day', price)._raw
         return res
 
     def limit_sell_order(self, symbol, amount, price):
-        res = self.hitbtc.create_limit_sell_order(symbol, amount, price)
+        res = self.api.submit_order(symbol, amount, 'sell', 'limit', 'day', price)._raw
         return res
+
+    def orders(self, status='all'):
+        res = self.api.list_orders(status)._raw
+        return(res)
         
-    def order_status(self, orderId, symbol):
-        res = self.hitbtc.fetch_order(orderId, symbol)
+    def order_status(self, orderId):
+        res = self.api.get_order_by_client_order_id(orderId)
         return res['status']
 
-    def cancel_order(self, orderId, symbol):
-        self.hitbtc.cancel_order(orderId, symbol)
+    def cancel_order(self, orderId):
+        self.api.cancel_order(orderId)
+
+    # def reset_balance(self):
+    # TODO Manually
