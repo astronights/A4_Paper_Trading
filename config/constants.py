@@ -3,7 +3,7 @@ from unittest.case import _BaseTestCaseContext
 
 TICK=10
 CYCLE=20
-LIMIT=100
+LIMIT=300
 COIN='BTC'
 SYMBOL='BTCUSD'
 PRICE_COL='Close'

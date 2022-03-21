@@ -12,7 +12,7 @@ class CEOAgent():
     def make_trade(self, trade):
         #TODO: Trade logic for CEO
         if(trade['type'] != 0):
-            latest_candle = self.broker_agent.ohlcv_data(constants.SYMBOL, 1).to_dict()
+            latest_candle = self.broker_agent.ohlcv_data(constants.SYMBOL).iloc[-1].to_dict()
             trade = self._update_trade_candle(trade, latest_candle)
             order = None
             if(trade['type'] == 1):

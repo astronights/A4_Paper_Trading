@@ -10,9 +10,6 @@ import logging
 class BrokerAgent():
 
     def __init__(self):
-        self.hitbtc = ccxt.hitbtc({'apiKey': hitbtc.apiKey, 'secret': hitbtc.secret,
-                          'urls': {'api': {'private': 'https://api.demo.hitbtc.com'}}})
-        logging.info('Established connection to HitBTC')
         self.url = URL('https://paper-api.alpaca.markets')
         self.api = REST(key_id=alpaca.CLIENT_ID,
                 secret_key=alpaca.CLIENT_SECRET,
@@ -31,10 +28,11 @@ class BrokerAgent():
             return(self.position['qty'])
 
     def ohlcv_data(self, symbol, timeframe=constants.TIMEFRAME):
-        since = datetime_utils.get_n_deltas_before_str(constants.LIMIT)
-        to = datetime_utils.get_today_str()
-        ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), since, to, None, [alpaca.EXCHANGE]).df
+        # since = datetime_utils.get_n_deltas_before_str(constants.LIMIT)
+        # to = datetime_utils.get_today_str()
+        ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), None, None, None, [alpaca.EXCHANGE]).df
         ohlcv.index = datetime_utils.convert_gmt_to_local(ohlcv.index)
+        ohlcv = ohlcv.iloc[-(constants.LIMIT+1):]
         ohlcv.drop(['exchange', 'trade_count', 'vwap'], axis=1, inplace=True)
         ohlcv.columns=['Open', 'High', 'Low', 'Close', 'Volume']
         ohlcv.index.rename('Timestamp', inplace=True)
@@ -42,7 +40,7 @@ class BrokerAgent():
 
     #TODO: Why is not working?
     def latest_ohlcv(self, symbol):
-        latest = self.api.get_latest_crypto_bars(symbol, alpaca.EXCHANGE)._raw
+        latest = self.api.get_latest_crypto_bar(symbol, alpaca.EXCHANGE)._raw
         print(latest)
 
     def ticker_price(self, symbol):

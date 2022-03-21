@@ -1,7 +1,7 @@
-# #Testing Broker
-# from agents import alpaca_broker_agent
+#Testing Broker
+from agents import broker_agent
 
-# broker = alpaca_broker_agent.BrokerAgent()
+broker = broker_agent.BrokerAgent()
 
-# #Check Ticker
-# broker.ticker_price('BTCUSD')
+#Check Ticker
+broker.ohlcv_data('BTCUSD')
