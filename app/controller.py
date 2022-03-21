@@ -25,8 +25,8 @@ class Controller():
 
         backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)
         decider = decider_agent.DeciderAgent(self.signal_agents, dao, ceo)
-
-        self.periodic_agents.extend([macroecon, pnl, backtesting, decider, powerbi])
+        #TODO: Add Decider agent to periodic agents
+        self.periodic_agents.extend([macroecon, pnl, backtesting, powerbi])
         logging.info('Registered agents')
 
     def start_agents(self):

@@ -1,3 +1,4 @@
+import pickle
 import pyarrow as pa
 import pyarrow.csv as csv
 from enum import Enum
@@ -14,3 +15,11 @@ def csv_to_df(filename):
     df_pa_table = csv.read_csv(filename)
     df = df_pa_table.to_pandas()
     return df
+
+def load_pickle(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
+
+def save_pickle(obj, filename):
+    with open(filename, 'wb') as f:
+        pickle.dump(obj, f)
