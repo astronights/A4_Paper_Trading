@@ -1,4 +1,4 @@
-from agents.signal_agents import ma_agent, random_agent
+from agents.signal_agents import ma_agent, random_agent, bollinger_agent
 from agents import broker_agent, decider_agent, dao_agent, backtesting_agent, ceo_agent, macroecon_agent, var_agent, pnl_agent, powerbi_agent
 import logging
 
@@ -15,7 +15,8 @@ class Controller():
 
         maAgent = ma_agent.MAAgent(broker)
         randomAgent = random_agent.RandomAgent()
-        self.signal_agents.extend([maAgent, randomAgent])
+        bollingerAgent = bollinger_agent.BollingerAgent()
+        self.signal_agents.extend([maAgent, randomAgent, bollingerAgent])
 
         macroecon = macroecon_agent.MacroEconAgent()
         var = var_agent.VARAgent(broker)
