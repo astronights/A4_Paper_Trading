@@ -11,7 +11,7 @@ class DAOAgent():
     def __init__(self):
         # DataFrame consisting of order data
         # Rows order data
-        # Column: client_order_id, type, price, quantity, status, created_at, updated_at, symbol, open, high, low, close, agent_weights, balance
+        # Column: Client_order_id, Action, Type, Price, Quantity, Status, Created_at, Updated_at, Symbol, Open, High, Low, Close, agent_weights, Balance
         # Index timestamp
         self.account_book = None
         # DataFrame consisting of the weights of the agents
@@ -20,6 +20,12 @@ class DAOAgent():
         # Index timestamp
         self.agent_weights = None
         logging.info(f'Created {self.__class__.__name__}')
+
+    def add_full_df(self, data, type):
+        if(type == Type.ACCOUNT_BOOK):
+            self.account_book = data
+        else:
+            self.agent_weights = data
 
     def add_data(self, data, type):
         now = datetime.now()
@@ -88,3 +94,10 @@ class DAOAgent():
             df = csv_to_df(path)
             return df
         return None
+
+    def get_pnl_last_n_trades(self, n):
+        if(self.account_book is not None and len(self.account_book) >= n):
+            df = self.account_book.iloc[-n:]
+            df['pnl'] = df['balance'].iloc[-1] - df['balance'].iloc[0]
+            return df['pnl']
+        return []

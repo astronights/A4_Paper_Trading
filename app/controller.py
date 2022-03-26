@@ -26,9 +26,9 @@ class Controller():
         powerbi = powerbi_agent.PowerBIAgent(broker, dao)
 
         backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)
-        decider = decider_agent.DeciderAgent(self.signal_agents, dao, ceo)
+        decider = decider_agent.DeciderAgent(self.signal_agents, macroecon, var, dao, ceo)
         #TODO: Add Decider agent to periodic agents
-        self.periodic_agents.extend([macroecon, var, pnl, backtesting, powerbi])
+        self.periodic_agents.extend([macroecon, var, pnl, backtesting, decider, powerbi])
         logging.info('Registered agents')
 
     def start_agents(self):
