@@ -14,6 +14,7 @@ class DAOAgent():
         # Column: Client_order_id, Action, Type, Price, Quantity, Status, Created_at, Updated_at, Symbol, Open, High, Low, Close, agent_weights, Balance
         # Index timestamp
         self.account_book = None
+        self.trade_latest = None # For storing last_tick only (also includes 0 signal)
         # DataFrame consisting of the weights of the agents
         # Rows weights
         # Column agent name
@@ -56,9 +57,9 @@ class DAOAgent():
 
     def get_all_data(self, type):
         if(type == Type.ACCOUNT_BOOK):
-            return self.account_book if self.account_book is not None else self.load_last_data(Type.ACCOUNT_BOOK)
+            return self.account_book if self.account_book is not None else self.load_all_data(Type.ACCOUNT_BOOK)
         else:
-            return self.agent_weights if self.agent_weights is not None else self.load_last_data(Type.AGENT_WEIGHTS)
+            return self.agent_weights if self.agent_weights is not None else self.load_all_data(Type.AGENT_WEIGHTS)
 
 
     def save_all_data(self):
@@ -95,6 +96,7 @@ class DAOAgent():
             return df
         return None
 
+    #TODO: What to do here + do we need?
     def get_pnl_last_n_trades(self, n):
         if(self.account_book is not None and len(self.account_book) >= n):
             df = self.account_book.iloc[-n:]

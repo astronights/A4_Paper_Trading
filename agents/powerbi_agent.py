@@ -7,9 +7,8 @@ from config import powerbi, constants
 
 class PowerBIAgent(BaseAgent):
     
-        def __init__(self, broker_agent, dao_agent):
+        def __init__(self, dao_agent):
             super().__init__()
-            self.broker_agent = broker_agent
             self.dao_agent = dao_agent
             self.headers = {"Content-Type": "application/json"}
     
@@ -21,16 +20,8 @@ class PowerBIAgent(BaseAgent):
         def update(self):
             #TODO Build objects to send to powerBI
             now = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
-            hitprice, binance, diff, signal, profit = arbitrage_finder_two_markets()
-            print(f'Time: {now}, Return: {profit:.4f} Hitbtc_Price : {hitprice:.2f}, Binance_Price :  {binance:.2f}, Difference : {abs(diff):.2f}, Arbitrage : {signal}')
-            json_data = [{
-                "Hitbtc_Price" :hitprice,
-                "Binance_Price" :binance,
-                "Difference" :abs(diff),
-                "Arbitrage" :signal,
-                "Return": profit,
-                "Time" :now 
-            }]
+            trade = self.dao_agent.trade_latest
+            json_data = [trade]
 
             #Send data to PowerBI Here
             response = requests.request(

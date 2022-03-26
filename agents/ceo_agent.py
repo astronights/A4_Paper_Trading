@@ -23,7 +23,7 @@ class CEOAgent():
                     order = self.broker_agent.market_buy_order(constants.SYMBOL, trade['Quantity'])
                 else:
                     order = self.broker_agent.limit_buy_order(constants.SYMBOL, trade['Quantity'], trade_price)
-                self._update_book(trade, order)
+                trade = self._update_book(trade, order)
             else:
                 logging.info(f'Insufficient balance to buy {trade["Quantity"]} {constants.COIN} @ {trade_price}, available balance: {self.broker_agent.get_balance()}')
         elif(trade['Action'] == 'sell'):
@@ -32,12 +32,12 @@ class CEOAgent():
                     order = self.broker_agent.market_sell_order(constants.SYMBOL, trade['Quantity'])
                 else:
                     order = self.broker_agent.limit_sell_order(constants.SYMBOL, trade['Quantity'], trade_price)
-                self._update_book(trade, order)
+                trade = self._update_book(trade, order)
             else:
                 logging.info(f'Insufficient balance to sell {trade["Quantity"]} {constants.COIN} @ {trade_price}, available balance: {self.broker_agent.get_balance(constants.SYMBOL)}')
         else:
             logging.info(f'No trade action specified @ {latest_candle["Timestamp"]}')
-        print(order)
+        self.dao_agent.trade_latest = trade
         
 
     def _update_trade_candle(self, trade, candle):
@@ -62,6 +62,7 @@ class CEOAgent():
         print(order)
         trade = self._populate_trade_order(trade, order)
         self.dao_agent.add_data(trade, Type.ACCOUNT_BOOK)
+        return(trade)
 
     def _check_stop_loss_take_profit(self, trade, latest_candle):
         balance = self.broker_agent.get_balance('cash') + self.broker_agent.get_balance(constants.SYMBOL)*latest_candle[constants.PRICE_COL]
