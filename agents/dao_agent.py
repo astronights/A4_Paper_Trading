@@ -19,7 +19,7 @@ class DAOAgent():
         # Rows weights
         # Column agent name
         # Index timestamp
-        self.agent_weights = None
+        self.agent_weights = self.load_all_data(Type.AGENT_WEIGHTS)
         logging.info(f'Created {self.__class__.__name__}')
 
     def add_full_df(self, data, type):
