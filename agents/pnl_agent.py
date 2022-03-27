@@ -18,7 +18,7 @@ class PNLAgent(BaseAgent):
 
     def calculate(self):
         #TODO How to calculate PnL on every order?
-        account_book = self.dao_agent.get_all_data(Type.ACCOUNT_BOOK)
+        account_book = self.dao_agent.account_book
         cur_order_ids = account_book['Client_order_id'].to_list() if(account_book is not None) else []
         orders = self.broker_agent.orders()
         for order in orders:

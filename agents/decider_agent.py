@@ -18,8 +18,12 @@ class DeciderAgent(BaseAgent):
         
     def run(self):
         while True:
-            self.decide()
-            time.sleep(constants.TICK)
+            updated_signals = all([agent.updated for agent in (self.signal_agents+[self.macroecon_agent, self.var_agent])])
+            if(updated_signals):
+                self.decide()
+                time.sleep(constants.TICK)
+            else:
+                continue
 
     def decide(self):
         self.lock.acquire()
@@ -41,5 +45,8 @@ class DeciderAgent(BaseAgent):
         str_price = 'market price' if self.trade['Type'] == 'market' else str(self.trade['Price'])
         logging.info(f'{self.trade["Action"].title()} Trade Decided @ {str_price}')
         self.ceo_agent.make_trade(self.trade)
+        for agent in (self.signal_agents+[self.macroecon_agent, self.var_agent]):
+            agent.updated = False
+        self.trade = {}
         self.lock.release()
         

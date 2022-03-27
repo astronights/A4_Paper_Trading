@@ -1,8 +1,8 @@
 from unittest.case import _BaseTestCaseContext
 
 
-TICK=10
-CYCLE=20
+TICK=60
+CYCLE=120
 LIMIT=300
 COIN='BTC'
 SYMBOL='BTCUSD'

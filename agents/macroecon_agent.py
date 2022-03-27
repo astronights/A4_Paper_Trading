@@ -31,6 +31,7 @@ class MacroEconAgent(BaseAgent):
             df = self.fred.get_series(self.macro_series[key])
             temp_df.at[0, key] = df.iloc[-1]
         self.data = pd.DataFrame(self.pca.transform(temp_df), columns = self.pca_cols, index=[0])
+        self.updated = True
         logging.info('Macro Data updated')
         self.lock.release()
 

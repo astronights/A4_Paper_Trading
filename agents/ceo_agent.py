@@ -46,6 +46,7 @@ class CEOAgent():
         return(trade)
 
     def _populate_trade_order(self, trade, order):
+        #TODO Add PnL value
         u_order = self.broker_agent.order_single(order['client_order_id'])
         trade['Client_order_id'] = u_order['client_order_id']
         trade['Action'] = u_order['side']
@@ -56,6 +57,7 @@ class CEOAgent():
         trade['Created_at'] = u_order['created_at']
         trade['Updated_at'] = u_order['updated_at']
         trade['Symbol'] = u_order['symbol']
+        trade['Balance'] = self.broker_agent.get_balance('cash')
         return(trade)
 
     def _update_book(self, trade, order):
