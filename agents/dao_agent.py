@@ -14,7 +14,6 @@ class DAOAgent():
         # Column: Client_order_id, Action, Type, Price, Quantity, Status, Created_at, Updated_at, Symbol, Open, High, Low, Close, agent_weights, Balance
         # Index timestamp
         self.account_book = None
-        self.trade_latest = None # For storing last_tick only (also includes 0 signal)
         # DataFrame consisting of the weights of the agents
         # Rows weights
         # Column agent name
@@ -60,7 +59,6 @@ class DAOAgent():
             return self.account_book if self.account_book is not None else self.load_all_data(Type.ACCOUNT_BOOK)
         else:
             return self.agent_weights if self.agent_weights is not None else self.load_all_data(Type.AGENT_WEIGHTS)
-
 
     def save_all_data(self):
         if(self.account_book is not None):

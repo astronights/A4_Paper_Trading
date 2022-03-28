@@ -10,7 +10,7 @@ class VARAgent(BaseAgent):
         super().__init__()
         self.broker_agent = broker_agent
         self.alpha = 0.01
-        self.data = None
+        self.data = []
 
 
     def run(self):
@@ -27,7 +27,10 @@ class VARAgent(BaseAgent):
         xth_smallest_rate = periodic_ret[xth]
         mean_return_rate = periodic_ret.mean()
         VaR = price * (mean_return_rate - xth_smallest_rate)
-        self.data = VaR
+        self.data.append(VaR)
         self.updated = True
         logging.info('VaR Data updated')
         self.lock.release()
+
+    def get_data_latest(self):
+        return(self.data[-1])

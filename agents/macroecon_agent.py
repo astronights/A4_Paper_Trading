@@ -22,7 +22,7 @@ class MacroEconAgent(BaseAgent):
     def run(self):
         while True:
             self.macro_data()
-            time.sleep(constants.TICK)
+            time.sleep(5*constants.CYCLE)
 
     def macro_data(self):
         self.lock.acquire()
@@ -30,7 +30,10 @@ class MacroEconAgent(BaseAgent):
         for key in self.macro_series.keys():
             df = self.fred.get_series(self.macro_series[key])
             temp_df.at[0, key] = df.iloc[-1]
-        self.data = pd.DataFrame(self.pca.transform(temp_df), columns = self.pca_cols, index=[0])
+        if(self.data is None):
+            self.data = pd.DataFrame(self.pca.transform(temp_df), columns = self.pca_cols, index=[0])
+        else:
+            self.data = pd.concat([self.data.tail(1), pd.DataFrame(self.pca.transform(temp_df), columns = self.pca_cols, index=[0])], axis=0)
         self.updated = True
         logging.info('Macro Data updated')
         self.lock.release()

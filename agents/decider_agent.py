@@ -27,6 +27,7 @@ class DeciderAgent(BaseAgent):
 
     def decide(self):
         self.lock.acquire()
+        self.trade = {}
         #TODO: Calculate action and quantity using some CBR
         weights = self.dao_agent.get_last_data(Type.AGENT_WEIGHTS).to_dict()
         latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
@@ -36,7 +37,7 @@ class DeciderAgent(BaseAgent):
         #TODO: Make agents operate in order
         for macro_val in self.macroecon_agent.get_data_as_dict().keys():
             self.trade[macro_val] = self.macroecon_agent.get_data_as_dict()[macro_val]
-        self.trade['VaR'] = self.var_agent.data
+        self.trade['VaR'] = self.var_agent.get_data_latest()
         action = sum([weights[agent_name] * latest_actions[agent_name] for agent_name in weights.keys()])
         self.trade['Action'] = 'buy' if action > 0.5 else ('sell' if action < -0.5 else 'none')
         self.trade['Quantity'] = 1.0
@@ -45,8 +46,8 @@ class DeciderAgent(BaseAgent):
         str_price = 'market price' if self.trade['Type'] == 'market' else str(self.trade['Price'])
         logging.info(f'{self.trade["Action"].title()} Trade Decided @ {str_price}')
         self.ceo_agent.make_trade(self.trade)
-        for agent in (self.signal_agents+[self.macroecon_agent, self.var_agent]):
+        for agent in (self.signal_agents+[self.var_agent]):
             agent.updated = False
-        self.trade = {}
+        self.updated = True
         self.lock.release()
         

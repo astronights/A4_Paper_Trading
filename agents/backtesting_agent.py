@@ -21,7 +21,7 @@ class BackTestingAgent(BaseAgent):
         self.lock.acquire()
         account_book = self.dao_agent.load_all_data(Type.ACCOUNT_BOOK)
         #TODO: Update Weights using some algorithm
-        weights = self.dao_agent.agent_weights.iloc[-1]
+        weights = self.dao_agent.agent_weights.iloc[-1].to_dict()
         for agent in self.signal_agents:
             weights[agent.__str__()] = random.uniform(0, 1)
         self.save_weights(weights)

@@ -25,7 +25,7 @@ class CEOAgent():
                     order = self.broker_agent.limit_buy_order(constants.SYMBOL, trade['Quantity'], trade_price)
                 trade = self._update_book(trade, order)
             else:
-                logging.info(f'Insufficient balance to buy {trade["Quantity"]} {constants.COIN} @ {trade_price}, available balance: {self.broker_agent.get_balance()}')
+                logging.info(f'Insufficient balance to buy {trade["Quantity"]} {constants.COIN} @ {trade_price}, available balance: {self.broker_agent.get_balance("cash")}')
         elif(trade['Action'] == 'sell'):
             if(trade['Quantity'] <= self.broker_agent.get_balance(constants.SYMBOL)):
                 if(trade['Type'] == 'market'):
