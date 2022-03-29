@@ -1,7 +1,7 @@
 #Testing Broker
-from agents import simulate_agent
+from agents.signal_agents import sentiment_agent
 
-sim = simulate_agent.SimulateAgent()
+agent = sentiment_agent.SentimentAgent()
 
 #Check Ticker
-sim.simulate() 
+agent.run()
