@@ -17,6 +17,7 @@ class RandomAgent(BaseSignalAgent):
 
     def signal(self):
         self.lock.acquire()
-        self.signals.append(random.randint(-1, 1))
-        self.lock.release()
+        self.signals.append(float(random.randint(-1, 1)))
+        self.updated = True
         logging.info(f'Random Signal: {self.signals[-1]}')
+        self.lock.release()

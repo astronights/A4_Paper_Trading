@@ -1,7 +1,6 @@
 #Testing Broker
-from agents import broker_agent
+from agents import simulate_agent
 
-broker = broker_agent.BrokerAgent()
+sim = simulate_agent.SimulateAgent()
 
-#Check Ticker
-broker.ohlcv_data('BTCUSD')
+sim.simulate()
