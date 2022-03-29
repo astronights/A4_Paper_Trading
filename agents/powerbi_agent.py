@@ -1,19 +1,40 @@
 from .base_agent import BaseAgent
 import time
-from config import constants
+import requests
+import json
+from datetime import datetime
+from config import powerbi, constants
+import logging
 
 class PowerBIAgent(BaseAgent):
     
-        def __init__(self, broker_agent, dao_agent):
+        def __init__(self, decider_agent):
             super().__init__()
-            self.broker_agent = broker_agent
-            self.dao_agent = dao_agent
+            self.decider_agent = decider_agent
+            self.headers = {"Content-Type": "application/json"}
     
         def run(self):
             while True:
-                self.update()
-                time.sleep(constants.TICK)
+                if(self.decider_agent.updated):
+                    self.update()
+                    time.sleep(constants.TICK)
+                else:
+                    continue
     
         def update(self):
             #TODO Build objects to send to powerBI
-            pass
+            self.lock.acquire()
+            now = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
+            trade = self.decider_agent.trade
+            self.decider_agent.updated = False
+            json_data = [trade]
+
+            #Send data to PowerBI Here
+            response = requests.request(
+                method="POST",
+                url=powerbi.URL,
+                headers=self.headers,
+                data=json.dumps(json_data))
+
+            logging.info('Updated data to PowerBI')
+            self.lock.release() 
