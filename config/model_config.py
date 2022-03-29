@@ -5,6 +5,18 @@ TENSORBOARD_LOG_DIR = "tensorboard_log"
 RESULTS_DIR = "results"
 
 # Model Parameters
+DQN_LEARNING_RATE = 0.003
+DQN_BATCH_SIZE = 32
+DQN_LAYER_SIZE = 256
+DQN_OUTPUT_SIZE = 3
+DQN_EPSILON = 0.5
+DQN_DECAY_RATE = 0.005
+DQN_MIN_EPSILON = 0.1
+DQN_GAMMA = 0.99
+DQN_COPY = 1000
+DQN_T_COPY = 0
+DQN_MEMORY_SIZE = 300
+
 A2C_PARAMS = {"n_steps": 5, "ent_coef": 0.01, "learning_rate": 0.0007}
 PPO_PARAMS = {
     "n_steps": 2048,
