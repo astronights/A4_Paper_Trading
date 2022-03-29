@@ -36,7 +36,7 @@ class DeciderAgent(BaseAgent):
             self.trade[agent_action] = latest_actions[agent_action]
         for macro_val in self.macroecon_agent.get_data_as_dict().keys():
             self.trade[macro_val] = self.macroecon_agent.get_data_as_dict()[macro_val]
-        self.trade['VaR'] = self.var_agent.get_data_latest()
+        self.trade['VaR'] = self.var_agent.get_latest_change()
         action = sum([weights[agent_name] * latest_actions[agent_name] for agent_name in weights.keys()])
         self.trade['Action'] = 'buy' if action > 0.5 else ('sell' if action < -0.5 else 'none')
         self.trade['Quantity'] = 1.0

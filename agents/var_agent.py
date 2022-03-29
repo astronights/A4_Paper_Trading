@@ -35,3 +35,6 @@ class VARAgent(BaseAgent):
 
     def get_data_latest(self):
         return(self.data[-1])
+
+    def get_latest_change(self):
+        return 0 if len(self.data) < 2 else (self.data[-1]/self.data[-2] - 1.0)
