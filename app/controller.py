@@ -16,9 +16,9 @@ class Controller():
         maAgent = ma_agent.MAAgent(broker)
         randomAgent = random_agent.RandomAgent()
         bollingerAgent = bollinger_agent.BollingerAgent(broker)
-        #dqnAgent = dqn_agent.dqn_agent(broker)
+        dqnAgent = dqn_agent.dqn_agent(broker)
         #DRLAgent = DRL_agent.DRLAgent(broker)
-        self.signal_agents.extend([maAgent, randomAgent, bollingerAgent, dqnAgent, DRLAgent])
+        self.signal_agents.extend([maAgent, randomAgent, bollingerAgent, dqnAgent])
 
         macroecon = macroecon_agent.MacroEconAgent()
         var = var_agent.VARAgent(broker)
