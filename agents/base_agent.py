@@ -7,7 +7,6 @@ class BaseAgent(ABC):
         self.lock = Lock()
         self.thread = Thread(name = self.__str__(), target = self.run)
         self.thread.daemon = True
-        self.updated = False
         logging.info(f'Created {self.__str__()}')
 
     @abstractmethod
