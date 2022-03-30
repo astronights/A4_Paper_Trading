@@ -3,6 +3,9 @@ import time
 import logging
 import random
 from config import constants
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression
 from utils.io_utils import Type
 
 class BackTestingAgent(BaseAgent):
@@ -11,6 +14,7 @@ class BackTestingAgent(BaseAgent):
         super().__init__()
         self.dao_agent = dao_agent
         self.signal_agents = signal_agents
+        self.cbr_columns = ['Action', 'Quantity', 'Price', 'Balance', 'PNL']+[x.__str__() for x in self.signal_agent_names]+['MACRO_0', 'MACRO_1', 'MACRO_2', 'VaR']
 
     def run(self):
         while True:
@@ -62,5 +66,13 @@ class BackTestingAgent(BaseAgent):
         self.dao_agent.add_data(weights, Type.AGENT_WEIGHTS)
 
     def update_cbr(self, account_book):
-        #TODO update cbr
-        pass
+        #TODO: Update CBR
+        historic_trades = self.dao_agent.get_historic_tradebook()
+        new_trades = account_book[self.cbr_columns]
+        updated_trades = pd.concat([historic_trades, new_trades], axis=1)
+        cbr = LogisticRegression(solver='liblinear')
+        X, y = updated_trades.loc[:, updated_trades.columns != 'PNL'].copy(), updated_trades.loc[:, 'PNL'].copy()
+        X.loc[:, 'Action'] = X['Action'].apply(lambda x: 1 if 'buy' else -1)
+        y = np.where(y > 0, 1, -1)
+        cbr.fit(X, y)
+        self.dao_agent.cbr_model = cbr

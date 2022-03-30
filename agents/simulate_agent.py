@@ -11,7 +11,7 @@ class SimulateAgent():
         self.data = pd.read_csv(os.path.join(constants.DATA_DIR, 'IS5006_Historical.csv'), index_col='datetime', parse_dates=[0], dayfirst=True)
         self.data['VaR'] = self.data['VaR'].pct_change()
         self.data['VaR'].fillna(0.0, inplace=True)
-        self.signal_agent_names = ['Fuzzy_sentiment_signal', 'MA_Signal', 'Bollinger']
+        self.signal_agent_names = ['SentimentAgent', 'MAAgent', 'BollingerAgent']
         self.macro_var = ['MACRO_0','MACRO_1','MACRO_2', 'VaR']
         self.agent_weights = [1.0/len(self.signal_agent_names)]*len(self.signal_agent_names)
         self.cbr = LogisticRegression(solver='liblinear')#KNeighborsClassifier(n_neighbors=3)
@@ -41,7 +41,7 @@ class SimulateAgent():
                     if(len(self.tradebook)> 20):
                         dir = self.run_cbr(self.data.loc[index])
                     ###### Reupdate ######
-                    self.data.loc[index, 'Quantity'] = (1.0-(float(dir)*constants.LEARNING_RATE))*self.quantity
+                    self.data.loc[index, 'Quantity'] = (1.0-(float(dir)*constants.LEARNING_RATE/2))*self.quantity
                     temp_capital = self.capital - (self.data.loc[index, 'Quantity'] * row['Close'])
                     temp_crypto = self.crypto + self.data.loc[index, 'Quantity']
                     self.data.loc[index, 'Balance'] = temp_capital
@@ -92,9 +92,9 @@ class SimulateAgent():
         if(row['Action'] == 'buy'):
             self.tradebook.loc[index] = [row['Action'], row['Quantity'], row['Price'], row['Balance'], np.NaN] + row[self.signal_agent_names].to_list() + row[self.macro_var].to_list()
         else:
-            buy_rows = prev_rows[prev_rows['Action'] == 'buy'].iloc[-int(row['Quantity']):]
+            buy_rows = prev_rows[prev_rows['Action'] == 'buy'].iloc[-int(round(row['Quantity'])):]
             buy_quantity = buy_rows['Quantity'].sum()
-            buy_price = buy_rows['Price'].sum()/buy_quantity
+            buy_price = (buy_rows['Price']*buy_rows['Quantity']).sum()/buy_quantity
             pnl = (row['Price']*row['Quantity']) - (buy_price*buy_quantity)
             for ix in buy_rows.index.to_list():
                 self.tradebook.loc[ix, 'PNL'] = pnl
