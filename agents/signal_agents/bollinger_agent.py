@@ -28,9 +28,9 @@ class BollingerAgent(BaseSignalAgent):
         df['Sell_Position'] = df['Sell_Signal'].diff()
         df['Buy_Signal'] = np.where(df[constants.PRICE_COL] <= df['LOW_Band_20'], 1, 0)
         df['Buy_Position'] = df['Buy_Signal'].diff()
-        if df.iloc[-1]['Buy_Position']==-1:
+        if df.iloc[-1]['Buy_Position']==1:
             self.signals.append(1.0)
-        elif df.iloc[-1]['Sell_Position']==-1:
+        elif df.iloc[-1]['Sell_Position']==1:
             self.signals.append(-1.0)
         else:
             self.signals.append(0.0)
