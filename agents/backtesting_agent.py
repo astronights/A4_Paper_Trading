@@ -25,6 +25,7 @@ class BackTestingAgent(BaseAgent):
             weights = self.dao_agent.agent_weights.iloc[-1].to_dict()
             new_weights = self._update_weights(weights, done_trades)
             self.save_weights(new_weights)
+            self.update_cbr(done_trades)
             logging.info('Recalculated weights')
         else:
             logging.info('No weights to update')
@@ -59,3 +60,7 @@ class BackTestingAgent(BaseAgent):
 
     def _save_weights(self, weights):
         self.dao_agent.add_data(weights, Type.AGENT_WEIGHTS)
+
+    def update_cbr(self, account_book):
+        #TODO update cbr
+        pass

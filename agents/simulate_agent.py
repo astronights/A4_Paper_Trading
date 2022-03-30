@@ -4,8 +4,6 @@ import pandas as pd
 from config import constants
 from utils import io_utils
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import NearestCentroid, KNeighborsClassifier
 
 class SimulateAgent():
 
@@ -103,12 +101,11 @@ class SimulateAgent():
             self.tradebook.loc[index] = [row['Action'], row['Quantity'], row['Price'], row['Balance'], pnl] + row[self.signal_agent_names].to_list() + row[self.macro_var].to_list()
 
     def save_data(self):
-        io_utils.df_to_csv(self.tradebook, 'tradebook.csv')
-        #TODO Save weights to csv as well
-        # agent_weights_df = pd.DataFrame(columns=self.signal_agent_names)
-        # agent_weights_df.loc[0] = self.agent_weights
-        # print(agent_weights_df)
-        # io_utils.df_to_csv(agent_weights_df, 'agent_weights.csv')
+        io_utils.df_to_csv(self.tradebook, os.path.join(constants.DATA_DIR, 'tradebook.csv'))
+        io_utils.save_pickle(self.cbr, os.path.join(constants.DATA_DIR, 'cbr.pkl'))
+        agent_weights_df = pd.DataFrame(columns=self.signal_agent_names)
+        agent_weights_df.loc[0] = self.agent_weights
+        io_utils.df_to_csv(agent_weights_df, os.path.join(constants.DATA_DIR, 'agent_weights.csv'))
 
     def run_cbr(self, row):
         last_non_nan = self.tradebook['PNL'].last_valid_index()
@@ -120,5 +117,5 @@ class SimulateAgent():
         pred_row.loc[:, 'Action'] = pred_row['Action'].apply(lambda x: 1 if 'buy' else -1)
         pred_row.drop(['Open', 'High', 'Low', 'Close', 'Volume'], inplace = True, axis=1)
         pred_pnl = self.cbr.predict(pred_row)
-        print(f'Estimated PnL Direction: {pred_pnl[0]}')
+        # print(f'Estimated PnL Direction: {pred_pnl[0]}')
         return(pred_pnl[0])

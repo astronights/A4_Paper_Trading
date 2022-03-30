@@ -1,9 +1,9 @@
-from agents import ceo_agent
 from .base_agent import BaseAgent
 from config import constants
+import os
 import time
 import logging
-from utils.io_utils import Type
+from utils import io_utils
 
 class DeciderAgent(BaseAgent):
 
@@ -15,6 +15,7 @@ class DeciderAgent(BaseAgent):
         self.dao_agent = dao_agent
         self.ceo_agent = ceo_agent
         self.trade = {}
+        self.cbr_model = io_utils.load_pickle(os.path.join(constants.DATA_DIR, 'cbr.pkl'))
         
     def run(self):
         while True:
@@ -29,7 +30,7 @@ class DeciderAgent(BaseAgent):
         self.lock.acquire()
         self.trade = {}
         #TODO: Calculate action and quantity using some CBR
-        weights = self.dao_agent.get_last_data(Type.AGENT_WEIGHTS).to_dict()
+        weights = self.dao_agent.get_last_data(io_utils.Type.AGENT_WEIGHTS).to_dict()
         latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
         logging.info(f'Agent Signals: {latest_actions}')
         for agent_action in latest_actions.keys():
@@ -42,6 +43,7 @@ class DeciderAgent(BaseAgent):
         self.trade['Quantity'] = 1.0
         self.trade['Price'] = None
         self.trade['Type'] = 'market'
+        self.trade = self._update_with_cbr(self.trade)
         str_price = 'market price' if self.trade['Type'] == 'market' else str(self.trade['Price'])
         logging.info(f'{self.trade["Action"].title()} Trade Decided @ {str_price}')
         self.ceo_agent.make_trade(self.trade)
@@ -50,3 +52,6 @@ class DeciderAgent(BaseAgent):
         self.updated = True
         self.lock.release()
         
+    def _update_with_cbr(self, trade):
+        #TODO Call CBR and update
+        pass
