@@ -16,8 +16,8 @@ class Controller():
         maAgent = ma_agent.MAAgent(broker)
         randomAgent = random_agent.RandomAgent()
         bollingerAgent = bollinger_agent.BollingerAgent(broker)
-        dqnAgent = dqn_agent.dqn_agent(broker)
-        #DRLAgent = DRL_agent.DRLAgent(broker)
+        dqnAgent = dqn_agent.DQNAgent(broker)
+        # DRLAgent = DRL_agent.DRLAgent(broker)
         self.signal_agents.extend([maAgent, randomAgent, bollingerAgent, dqnAgent])
 
         macroecon = macroecon_agent.MacroEconAgent()
@@ -26,7 +26,7 @@ class Controller():
         pnl = pnl_agent.PNLAgent(broker, dao)
         ceo = ceo_agent.CEOAgent(broker, dao)
 
-        decider = decider_agent.DeciderAgent(self.signal_agents, macroecon, var, dao, ceo)
+        decider = decider_agent.DeciderAgent(self.signal_agents, broker, macroecon, var, dao, ceo)
         powerbi = powerbi_agent.PowerBIAgent(decider)
 
         backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)

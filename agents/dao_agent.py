@@ -1,5 +1,6 @@
 import os
 from config import constants
+from utils import io_utils
 from utils.io_utils import *
 import logging
 import numpy as np
@@ -19,7 +20,11 @@ class DAOAgent():
         # Column agent name
         # Index timestamp
         self.agent_weights = self.load_all_data(Type.AGENT_WEIGHTS)
+        self.cbr_model = io_utils.load_pickle(os.path.join(constants.MODEL_DIR, 'cbr.pkl'))
         logging.info(f'Created {self.__class__.__name__}')
+
+    def get_historic_tradebook(self):
+        return io_utils.csv_to_df(os.path.join(constants.DATA_DIR, 'tradebook.csv'))
 
     def add_full_df(self, data, type):
         if(type == Type.ACCOUNT_BOOK):
@@ -70,6 +75,8 @@ class DAOAgent():
             agent_weights_path = os.path.join(constants.DATA_DIR, Type.AGENT_WEIGHTS.value)
             df_to_csv(self.agent_weights, agent_weights_path)
             logging.info(f'Saved {Type.AGENT_WEIGHTS}')
+        save_pickle(self.cbr_model, os.path.join(constants.MODEL_DIR, 'cbr.pkl'))
+        logging.info(f'Saved CBR Model')
         # df = None
         # path = os.path.join(constants.DATA_DIR, type.value)
         # if os.path.exists(path):

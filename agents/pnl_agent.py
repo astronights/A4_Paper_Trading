@@ -21,6 +21,7 @@ class PNLAgent(BaseAgent):
         account_book = self.dao_agent.account_book
         cur_order_ids = account_book['Client_order_id'].to_list() if(account_book is not None) else []
         orders = self.broker_agent.orders()
+        pnl = 0.0
         for order in orders:
             order_raw = order._raw
             if(order_raw['client_order_id'] in cur_order_ids):
@@ -32,5 +33,11 @@ class PNLAgent(BaseAgent):
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Status'] = order_raw['status']
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Updated_at'] = order_raw['updated_at']
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Price'] = float(order_raw['filled_avg_price'])
+                    if(order_raw['side'] == 'buy'):
+                        pnl = pnl - float(order_raw['qty'])*float(order_raw['filled_avg_price'])
+                    else:
+                        pnl = pnl + float(order_raw['qty'])*float(order_raw['filled_avg_price'])
+                        account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'PNL'] = pnl
+                        pnl = 0
                 logging.info(f'Updated order {order_raw["client_order_id"]}')
         self.dao_agent.add_full_df(account_book, Type.ACCOUNT_BOOK)
