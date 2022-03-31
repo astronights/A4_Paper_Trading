@@ -30,9 +30,9 @@ class RSIAgent(BaseSignalAgent):
         df['rs'] = df['avg_gain'] / df['avg_loss']
         df['rsi'] = 100 - (100/(1.0 + df['rs']))
 
-        df['RSI_Sell_Signal'] = np.where(rsi_df['rsi'] >= constants.RSI_OVERBOUGHT, 1, 0)
+        df['RSI_Sell_Signal'] = np.where(df['rsi'] >= constants.RSI_OVERBOUGHT, 1, 0)
         df['RSI_Sell_Position'] = df['RSI_Sell_Signal'].diff()
-        df['RSI_Buy_Signal'] = np.where(rsi_df['rsi'] <= constants.RSI_OVERSOLD, 1, 0)
+        df['RSI_Buy_Signal'] = np.where(df['rsi'] <= constants.RSI_OVERSOLD, 1, 0)
         df['RSI_Buy_Position'] = df['RSI_Buy_Signal'].diff()
         if df.iloc[-1]['RSI_Buy_Position']==1:
             self.signals.append(1.0)

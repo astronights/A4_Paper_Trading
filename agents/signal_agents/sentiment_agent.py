@@ -27,7 +27,6 @@ class SentimentAgent(BaseSignalAgent):
             self.auth.set_access_token(twitter.ACCESS_TOKEN, twitter.ACCESS_TOKEN_SECRET)
             # create tweepy API object to fetch tweets
             self.api = tweepy.API(self.auth)
-            print('logged in')
         except:
             logging.error("Error: Authentication Failed")
 

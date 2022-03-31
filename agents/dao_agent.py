@@ -20,7 +20,7 @@ class DAOAgent():
         # Column agent name
         # Index timestamp
         self.agent_weights = self.load_all_data(Type.AGENT_WEIGHTS)
-        self.cbr_model = io_utils.load_pickle(os.path.join(constants.MODEL_DIR, 'cbr.pkl'))
+        self.cbr_model = io_utils.load_pickle(os.path.join(constants.DATA_DIR, 'cbr.pkl'))
         logging.info(f'Created {self.__class__.__name__}')
 
     def get_historic_tradebook(self):
@@ -71,22 +71,13 @@ class DAOAgent():
             account_book_path = os.path.join(constants.DATA_DIR, Type.ACCOUNT_BOOK.value)
             df_to_csv(self.account_book, account_book_path)
             logging.info(f'Saved {Type.ACCOUNT_BOOK}')
+            self.account_book = self.account_book.loc[self.account_book['PNL'].last_valid_index()+1:,]
         if(self.agent_weights is not None):
             agent_weights_path = os.path.join(constants.DATA_DIR, Type.AGENT_WEIGHTS.value)
             df_to_csv(self.agent_weights, agent_weights_path)
             logging.info(f'Saved {Type.AGENT_WEIGHTS}')
-        save_pickle(self.cbr_model, os.path.join(constants.MODEL_DIR, 'cbr.pkl'))
+        save_pickle(self.cbr_model, os.path.join(constants.DATA_DIR, 'cbr.pkl'))
         logging.info(f'Saved CBR Model')
-        # df = None
-        # path = os.path.join(constants.DATA_DIR, type.value)
-        # if os.path.exists(path):
-        #     old_df = csv_to_df(path)
-        #     df = pd.DataFrame(data, index=[len(old_df)])
-        #     df = pd.concat([old_df, df], axis=0, copy=False)
-        # else:
-        #     df = pd.DataFrame(data, index=[0])
-        # print(df)
-        # df_to_csv(df, path)
 
     def load_last_data(self, type):
         path = os.path.join(constants.DATA_DIR, type.value)
@@ -101,11 +92,3 @@ class DAOAgent():
             df = csv_to_df(path)
             return df
         return None
-
-    #TODO: What to do here + do we need?
-    def get_pnl_last_n_trades(self, n):
-        if(self.account_book is not None and len(self.account_book) >= n):
-            df = self.account_book.iloc[-n:]
-            df['pnl'] = df['balance'].iloc[-1] - df['balance'].iloc[0]
-            return df['pnl']
-        return []

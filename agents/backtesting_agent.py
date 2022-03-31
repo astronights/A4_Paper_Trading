@@ -14,7 +14,7 @@ class BackTestingAgent(BaseAgent):
         super().__init__()
         self.dao_agent = dao_agent
         self.signal_agents = signal_agents
-        self.cbr_columns = ['Action', 'Quantity', 'Price', 'Balance', 'PNL']+[x.__str__() for x in self.signal_agent_names]+['MACRO_0', 'MACRO_1', 'MACRO_2', 'VaR']
+        self.cbr_columns = ['Action', 'Quantity', 'Price', 'Balance', 'PNL']+[x.__str__() for x in self.signal_agents]+['MACRO_0', 'MACRO_1', 'MACRO_2', 'VaR']
 
     def run(self):
         while True:
@@ -28,29 +28,26 @@ class BackTestingAgent(BaseAgent):
         if(done_trades is not None and len(done_trades) > 0):
             weights = self.dao_agent.agent_weights.iloc[-1].to_dict()
             new_weights = self._update_weights(weights, done_trades)
-            self.save_weights(new_weights)
+            self._save_weights(new_weights)
             self.update_cbr(done_trades)
-            logging.info('Recalculated weights')
+            self.dao_agent.save_all_data()
+            logging.info('Recalculated weights and CBR')
         else:
             logging.info('No weights to update')
-        self.dao_agent.save_all_data()
         self.lock.release()
 
     def _update_weights(self, weights, done_trades):
         new_weights = weights.copy()
-        trade_stack = []
         for index, trade in done_trades:
             if trade['Action'] == 'buy':
-                trade_stack.append(trade)
+                is_profit = -1 if trade['PNL'] < 0 else 1
+                for agent in self.signal_agents:
+                    if(is_profit == 1):
+                        new_weights[agent.__str__()] = new_weights[agent.__str__()] + (constants.LEARNING_RATE*buy_trade[agent.__str__()])
+                    else:
+                        new_weights[agent.__str__()] = new_weights[agent.__str__()] - (constants.LEARNING_RATE*buy_trade[agent.__str__()])
             elif trade['Action'] == 'sell':
                 is_profit = -1 if trade['PNL'] < 0 else 1
-                while(len(trade_stack) > 0):
-                    buy_trade = trade_stack.pop()
-                    for agent in self.signal_agents:
-                        if(is_profit == 1):
-                            new_weights[agent.__str__()] = new_weights[agent.__str__()] + (constants.LEARNING_RATE*buy_trade[agent.__str__()])
-                        else:
-                            new_weights[agent.__str__()] = new_weights[agent.__str__()] - (constants.LEARNING_RATE*buy_trade[agent.__str__()])
                 for agent in self.signal_agents:
                     if(is_profit == 1):
                         new_weights[agent.__str__()] = new_weights[agent.__str__()] - (constants.LEARNING_RATE*trade[agent.__str__()])

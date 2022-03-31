@@ -39,8 +39,6 @@ class BrokerAgent():
             return(float(self.position['qty']))
 
     def ohlcv_data(self, symbol, timeframe=constants.TIMEFRAME):
-        # since = datetime_utils.get_n_deltas_before_str(constants.LIMIT)
-        # to = datetime_utils.get_today_str()
         ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), None, None, None, [alpaca.EXCHANGE]).df
         ohlcv.index = datetime_utils.convert_gmt_to_local(ohlcv.index)
         ohlcv = ohlcv.iloc[-(constants.LIMIT+1):]
@@ -54,7 +52,6 @@ class BrokerAgent():
         latest_ret = {}
         for key in self.ohlcv_mappings.keys():
             latest_ret[self.ohlcv_mappings[key]] = latest.pop(key)
-        # latest['Timestamp'] = datetime_utils.convert_gmt_to_local(datetime.strptime(latest['Timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
         return(latest_ret)
 
     def ticker_price(self, symbol):
@@ -80,7 +77,7 @@ class BrokerAgent():
 
     def orders(self, status='all'):
         res = self.api.list_orders(status)
-        return(res)
+        return([] if res is None else res)
 
     def order_single(self, orderId):
         res = self.api.get_order_by_client_order_id(orderId)

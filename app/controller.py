@@ -16,7 +16,7 @@ class Controller():
         maAgent = ma_agent.MAAgent(broker)
         bollingerAgent = bollinger_agent.BollingerAgent(broker)
         rsiAgent = rsi_agent.RSIAgent(broker)
-        sentimentAgent = sentiment_agent.SentimentAgent(broker)
+        sentimentAgent = sentiment_agent.SentimentAgent()
         self.signal_agents = [maAgent, bollingerAgent, rsiAgent, sentimentAgent]
 
         macroecon = macroecon_agent.MacroEconAgent()

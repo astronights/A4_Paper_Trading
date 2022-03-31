@@ -20,7 +20,8 @@ class PNLAgent(BaseAgent):
         #TODO How to calculate PnL on every order?
         account_book = self.dao_agent.account_book
         cur_order_ids = account_book['Client_order_id'].to_list() if(account_book is not None) else []
-        orders = self.broker_agent.orders()
+        orders = self.broker_agent.orders().sort(key = lambda order: order._raw['updated_at'])
+        buy_stack = []
         pnl = 0.0
         for order in orders:
             order_raw = order._raw
@@ -35,9 +36,13 @@ class PNLAgent(BaseAgent):
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Price'] = float(order_raw['filled_avg_price'])
                     if(order_raw['side'] == 'buy'):
                         pnl = pnl - float(order_raw['qty'])*float(order_raw['filled_avg_price'])
+                        buy_stack.append(order_raw['client_order_id'])
                     else:
                         pnl = pnl + float(order_raw['qty'])*float(order_raw['filled_avg_price'])
+                        for c in buy_stack:
+                            account_book.loc[account_book['Client_order_id']==c, 'PNL'] = pnl
                         account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'PNL'] = pnl
+                        buy_stack = []
                         pnl = 0.0
                 logging.info(f'Updated order {order_raw["client_order_id"]}')
         self.dao_agent.add_full_df(account_book, Type.ACCOUNT_BOOK)
