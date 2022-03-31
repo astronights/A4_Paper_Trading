@@ -5,8 +5,8 @@ from tweepy import OAuthHandler
 from textblob import TextBlob
 from .base_signal_agent import BaseSignalAgent
 from config import twitter, constants
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime, timedelta, timezone
+import logging
 
 #fuzzy logic
 import skfuzzy as fuzz
@@ -29,7 +29,7 @@ class SentimentAgent(BaseSignalAgent):
             self.api = tweepy.API(self.auth)
             print('logged in')
         except:
-            print("Error: Authentication Failed")
+            logging.error("Error: Authentication Failed")
 
     def run(self):
         while True:
@@ -39,34 +39,63 @@ class SentimentAgent(BaseSignalAgent):
     def signal(self):
         self.lock.acquire()
         query = 'Bitcoin'
-        hoursAgo = minutesAgo = 0
-        tweets = self._get_tweets(query, twitter.NUM_TWEETS, hoursAgo, minutesAgo, constants.TICK)
-        #note: not sure if more tweets needed for signal (e.g. more than 5) or is more than 0 enough
-        if (len(tweets) !=  0):
-            # amount of positive tweets
-            ptweets = len([tweet for tweet in tweets if tweet['sentiment'] == 'positive'])      
-            print("Positive tweets amount: " , ptweets)
-
-            # amount of negative tweets
-            ntweets = len([tweet for tweet in tweets if tweet['sentiment'] == 'negative'])      
-            print("Negative tweets amount: " , ntweets)
-
-            # amount of neutral tweets
-            #print("Neutral tweets amount:", (len(tweets) -(len( ntweets )+len( ptweets)))/len(tweets))
-
-            if (ptweets > ntweets):
-                self.signals.append(1.0)
-                print("positive signal")
-            elif(ptweets < ntweets):
-                self.signals.append(-1.0)
-                print("negative signal")
+        sentiment_signal = 0.0
+        hoursAgo = secondsAgo = 0
+        tweets = self._get_tweets(query, twitter.NUM_TWEETS, hoursAgo, constants.TIMEFRAME, secondsAgo)
+        if (len(tweets) >  0):
+            sentiment = sum([t['sentiment'] for t in tweets])/len(tweets)
+            if(len(self.signals) == 0):
+                self.signals.append((1.0 if sentiment > 55.0 else -1.0 if sentiment < 45.0 else 0.0))
             else:
-                self.signals.append(0.0)
-                print("neutral signal")
+                sentiment_signal = 1.0 if sentiment > 50.0 else 0.0
+                self.signals.append(sentiment_signal - self.signals[-1])
         else:
-            print("no tweets, neutral signal")
             self.signals.append(0.0)
+        logging.info(f'Sentiment Signal: {self.signals[-1]}')
         self.lock.release()
+
+    def _get_tweets(self, query, count, hoursAgo, minutesAgo, secondsAgo):
+
+        # empty list to store parsed tweets
+        tweets = []
+        earliest_time = datetime.now(timezone.utc)- timedelta(hours = hoursAgo, minutes = minutesAgo, seconds = secondsAgo)
+        try:
+            # call twitter api to fetch tweets
+            #fetched_tweets = self.api.search_tweets(q = query, count = count, lang = "en", since_id = date_since)
+            fetched_tweets = tweepy.Cursor(self.api.search_tweets,q = query, lang = "en").items(count)
+  
+            # parsing tweets one by one
+            for tweet in fetched_tweets:
+                # getting the appropiate timeframe for tweets
+                
+                createdAt = tweet.created_at
+                #only accept tweets that are tweeted after the timeframe
+                if(earliest_time < createdAt):
+
+                    # empty dictionary to store required params of a tweet
+                    parsed_tweet = {}
+                    # saving text of tweet
+                    parsed_tweet['text'] = tweet.text
+                    # saving sentiment of tweet
+                    parsed_tweet['sentiment'] = self._get_tweet_sentiment(tweet.text)
+
+                    tweets.append(parsed_tweet)
+  
+            # return parsed tweets
+            return tweets
+  
+        except tweepy.errors.TweepyException as e:
+            logging.error("Error : " + str(e))
+
+    def _get_tweet_sentiment(self, tweet):
+
+        # create TextBlob object of passed tweet text
+        analysis = TextBlob(self._clean_up_tweet(tweet))
+        # set sentiment
+        tweetData = (analysis.sentiment.polarity, analysis.sentiment.subjectivity)
+        tweetGrade = self._fuzzy_logic_get_tweet_grade(tweetData)
+
+        return(tweetGrade)
   
     # Cleaning the tweets
     def _clean_up_tweet(self, txt):
@@ -82,108 +111,36 @@ class SentimentAgent(BaseSignalAgent):
         curSubjectivity = tweetData[1]
 
         polarity = ctrl.Antecedent(np.arange(-1.0, 1.0, 0.1), 'polarity')
-        subjectivity = ctrl.Antecedent(np.arange(-1.0, 1.0, 0.1), 'subjectivity')
-        grade = ctrl.Consequent(np.arange(0, 101, 1), 'grade')
-
-        NEGATIVE = 'poor'
-        POSITIVE = 'average'
-        NEUTRAL = 'good'
-
-        grade[NEGATIVE] = fuzz.trimf(grade.universe, [0, 0, 50])
-        grade[NEUTRAL] = fuzz.trimf(grade.universe, [25, 50, 75])
-        #note: not sure if 25 50 75 is fine, done so because it makes it more sensitive. Or else alot of tweets would be neurtal
-        #grade[NEUTRAL] = fuzz.trimf(grade.universe, [0, 50, 100])
-        grade[POSITIVE] = fuzz.trimf(grade.universe, [50, 100, 100])
+        subjectivity = ctrl.Antecedent(np.arange(0.0, 1.0, 0.1), 'subjectivity')
+        strength = ctrl.Consequent(np.arange(0, 101, 1), 'strength')
 
         polarity.automf(3)
-        subjectivity.automf(3)
-
-
-        rule1 = ctrl.Rule(subjectivity[POSITIVE], grade[NEUTRAL])
         
-        rule2 = ctrl.Rule(polarity[POSITIVE] & (subjectivity[NEUTRAL] | subjectivity[NEGATIVE]), grade[POSITIVE])
-        rule3 = ctrl.Rule(polarity[NEUTRAL] & (subjectivity[NEUTRAL] | subjectivity[NEGATIVE]), grade[NEUTRAL])
-        rule4 = ctrl.Rule(polarity[NEGATIVE] & (subjectivity[NEUTRAL] | subjectivity[NEGATIVE]), grade[NEGATIVE])
+        subjectivity['good'] = fuzz.trimf(subjectivity.universe, [0, 0, 0.5])
+        subjectivity['average'] = fuzz.trimf(subjectivity.universe, [0, 0.5, 1])
+        subjectivity['poor'] = fuzz.trimf(subjectivity.universe, [0.5, 1, 1])
 
+        strength['strongly_negative'] = fuzz.trimf(strength.universe, [0, 0, 25])
+        strength['negative'] = fuzz.trimf(strength.universe, [0, 25, 50])
+        strength['neutral'] = fuzz.trimf(strength.universe, [25, 50, 75])
+        strength['positive'] = fuzz.trimf(strength.universe, [50, 75, 100])
+        strength['strongly_positive'] = fuzz.trimf(strength.universe, [75, 100, 100])
 
-        allRules = [rule1, rule2, rule3, rule4]
+        rule1 = ctrl.Rule(polarity['poor'] & subjectivity['good'], strength['strongly_negative'])
+        rule2 = ctrl.Rule(polarity['poor'] & subjectivity['average'], strength['negative'])
+        rule3 = ctrl.Rule(polarity['average'] | subjectivity['poor'], strength['neutral'])
+        rule4 = ctrl.Rule(polarity['good'] & subjectivity['average'], strength['positive'])
+        rule5 = ctrl.Rule(polarity['good'] & subjectivity['good'], strength['strongly_positive'])
 
         # assign the rules
-        sentiment_ctrl = ctrl.ControlSystem(allRules)
+        sentiment_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5])
         sentiment = ctrl.ControlSystemSimulation(sentiment_ctrl)
 
         sentiment.input['polarity'] = curPolarity
         sentiment.input['subjectivity'] = curSubjectivity
 
-
         # Crunch the numbers
         sentiment.compute()
+        sentimentStrength = sentiment.output['strength']
 
-        sentimentGrade = sentiment.output['grade']
-        print("grade: " + str(sentimentGrade))
-
-        return sentimentGrade
-
-    def _get_tweet_sentiment(self, tweet):
-
-        # create TextBlob object of passed tweet text
-        analysis = TextBlob(self._clean_up_tweet(tweet))
-        # set sentiment
-        #todo check subjectivity and apply fuzzy logic
-
-        tweetData = (analysis.sentiment.polarity, analysis.sentiment.subjectivity)
-        print(tweetData)
-        
-        tweetGrade = self._fuzzy_logic_get_tweet_grade(tweetData)
-
-        #can be changed for sensitivity
-        if (tweetGrade >= 60.0):
-            return 'positive'
-        elif ((tweetGrade < 60.0) & (tweetGrade > 40.0)):
-            return 'neutral'
-        else:
-            return 'negative'
-        
-    
-
-    def _get_tweets(self, query, count, hoursAgo, minutesAgo, secondsAgo):
-
-        # empty list to store parsed tweets
-        tweets = []
-        
-        try:
-            # call twitter api to fetch tweets
-            #fetched_tweets = self.api.search_tweets(q = query, count = count, lang = "en", since_id = date_since)
-            fetched_tweets = tweepy.Cursor(self.api.search_tweets,q = query, lang = "en").items(count)
-  
-            # parsing tweets one by one
-            for tweet in fetched_tweets:
-                # getting the appropiate timeframe for tweets
-                timeframe = datetime.now()- timedelta(hours = hoursAgo, minutes = minutesAgo, seconds = secondsAgo)
-                
-                createdAt = tweet.created_at
-                #only accept tweets that are tweeted after the timeframe
-                if(timeframe.replace(tzinfo=pytz.utc) < createdAt.replace(tzinfo=pytz.utc)):
-
-                    # empty dictionary to store required params of a tweet
-                    parsed_tweet = {}
-                    # saving text of tweet
-                    parsed_tweet['text'] = tweet.text
-                    # saving sentiment of tweet
-                    parsed_tweet['sentiment'] = self._get_tweet_sentiment(tweet.text)
-
-                    # appending parsed tweet to tweets list
-                    if tweet.retweet_count > 0:
-                        # if tweet has retweets, ensure that it is appended only once
-                        if parsed_tweet not in tweets:
-                            tweets.append(parsed_tweet)
-                    else:
-                        tweets.append(parsed_tweet)
-  
-            # return parsed tweets
-            return tweets
-  
-        except tweepy.errors.TweepyException as e:
-            # print error (if any)
-            print("Error : " + str(e))
-
+        return sentimentStrength
