@@ -11,7 +11,7 @@ class SimulateAgent():
         self.data = pd.read_csv(os.path.join(constants.DATA_DIR, 'IS5006_Historical.csv'), index_col='datetime', parse_dates=[0], dayfirst=True)
         self.data['VaR'] = self.data['VaR'].pct_change()
         self.data['VaR'].fillna(0.0, inplace=True)
-        self.signal_agent_names = ['SentimentAgent', 'MAAgent', 'BollingerAgent']
+        self.signal_agent_names = ['SentimentAgent', 'MAAgent', 'BollingerAgent', 'RSIAgent']
         self.macro_var = ['MACRO_0','MACRO_1','MACRO_2', 'VaR']
         self.agent_weights = [1.0/len(self.signal_agent_names)]*len(self.signal_agent_names)
         self.cbr = LogisticRegression(solver='liblinear')#KNeighborsClassifier(n_neighbors=3)
@@ -41,7 +41,7 @@ class SimulateAgent():
                     if(len(self.tradebook)> 20):
                         dir = self.run_cbr(self.data.loc[index])
                     ###### Reupdate ######
-                    self.data.loc[index, 'Quantity'] = (1.0-(float(dir)*constants.LEARNING_RATE/2))*self.quantity
+                    self.data.loc[index, 'Quantity'] = round((1.0-(float(dir)*constants.LEARNING_RATE))*self.quantity, 2)
                     temp_capital = self.capital - (self.data.loc[index, 'Quantity'] * row['Close'])
                     temp_crypto = self.crypto + self.data.loc[index, 'Quantity']
                     self.data.loc[index, 'Balance'] = temp_capital
@@ -65,7 +65,7 @@ class SimulateAgent():
                     pass
             else:
                 continue
-        print(f'Final PnL: {sum(self.pnl)}, Capital: {self.capital}, Crypto: {self.crypto}')
+        print(f'Final PnL: {sum(self.pnl)}, Capital: {self.capital}, Crypto: {self.crypto} @ Price {self.data.iloc[-1]["Close"]}')
         print(f'Agent Weights: {self.agent_weights}')
         self.save_data()
 

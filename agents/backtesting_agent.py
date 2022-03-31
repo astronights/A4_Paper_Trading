@@ -37,16 +37,13 @@ class BackTestingAgent(BaseAgent):
         self.lock.release()
 
     def _update_weights(self, weights, done_trades):
-        new_weights = weights
+        new_weights = weights.copy()
         trade_stack = []
-        trade_value = 0.0
         for index, trade in done_trades:
             if trade['Action'] == 'buy':
                 trade_stack.append(trade)
-                trade_value = trade_value - float(trade['Quantity']*trade['Price'])
             elif trade['Action'] == 'sell':
-                trade_value = trade_value + float(trade['Quantity']*trade['Price'])
-                is_profit = -1 if trade_value < 0 else 1
+                is_profit = -1 if trade['PNL'] < 0 else 1
                 while(len(trade_stack) > 0):
                     buy_trade = trade_stack.pop()
                     for agent in self.signal_agents:
@@ -59,14 +56,12 @@ class BackTestingAgent(BaseAgent):
                         new_weights[agent.__str__()] = new_weights[agent.__str__()] - (constants.LEARNING_RATE*trade[agent.__str__()])
                     else:
                         new_weights[agent.__str__()] = new_weights[agent.__str__()] + (constants.LEARNING_RATE*trade[agent.__str__()])
-                trade_value = 0.0
         return new_weights
 
     def _save_weights(self, weights):
         self.dao_agent.add_data(weights, Type.AGENT_WEIGHTS)
 
     def update_cbr(self, account_book):
-        #TODO: Update CBR
         historic_trades = self.dao_agent.get_historic_tradebook()
         new_trades = account_book[self.cbr_columns]
         updated_trades = pd.concat([historic_trades, new_trades], axis=1)

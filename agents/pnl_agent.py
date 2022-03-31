@@ -38,6 +38,6 @@ class PNLAgent(BaseAgent):
                     else:
                         pnl = pnl + float(order_raw['qty'])*float(order_raw['filled_avg_price'])
                         account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'PNL'] = pnl
-                        pnl = 0
+                        pnl = 0.0
                 logging.info(f'Updated order {order_raw["client_order_id"]}')
         self.dao_agent.add_full_df(account_book, Type.ACCOUNT_BOOK)
