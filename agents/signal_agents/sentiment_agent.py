@@ -7,6 +7,11 @@ from .base_signal_agent import BaseSignalAgent
 from config import twitter, constants
 from datetime import datetime, timedelta
 import pytz
+
+#fuzzy logic
+import skfuzzy as fuzz
+import numpy as np
+from skfuzzy import control as ctrl
   
 class SentimentAgent(BaseSignalAgent):
     
@@ -36,6 +41,7 @@ class SentimentAgent(BaseSignalAgent):
         query = 'Bitcoin'
         hoursAgo = minutesAgo = 0
         tweets = self._get_tweets(query, twitter.NUM_TWEETS, hoursAgo, minutesAgo, constants.TICK)
+        #note: not sure if more tweets needed for signal (e.g. more than 5) or is more than 0 enough
         if (len(tweets) !=  0):
             # amount of positive tweets
             ptweets = len([tweet for tweet in tweets if tweet['sentiment'] == 'positive'])      
@@ -49,17 +55,17 @@ class SentimentAgent(BaseSignalAgent):
             #print("Neutral tweets amount:", (len(tweets) -(len( ntweets )+len( ptweets)))/len(tweets))
 
             if (ptweets > ntweets):
-                #positive signal
-                print("placeholder positive signal")
+                self.signals.append(1.0)
+                print("positive signal")
             elif(ptweets < ntweets):
-                #negative signal
-                print("placeholder negative signal")
+                self.signals.append(-1.0)
+                print("negative signal")
             else:
-                #neutral signal
-                print("placeholder no signal")
+                self.signals.append(0.0)
+                print("neutral signal")
         else:
-            #neutral signal
-            print("placeholder no signal")
+            print("no tweets, neutral signal")
+            self.signals.append(0.0)
         self.lock.release()
   
     # Cleaning the tweets
@@ -71,18 +77,75 @@ class SentimentAgent(BaseSignalAgent):
          txt = re.sub(r'https?:\/\/[A-Za-z0-9\.\/]+', '', txt)
          return txt
   
+    def _fuzzy_logic_get_tweet_grade(self, tweetData):
+        curPolarity = tweetData[0]
+        curSubjectivity = tweetData[1]
+
+        polarity = ctrl.Antecedent(np.arange(-1.0, 1.0, 0.1), 'polarity')
+        subjectivity = ctrl.Antecedent(np.arange(-1.0, 1.0, 0.1), 'subjectivity')
+        grade = ctrl.Consequent(np.arange(0, 101, 1), 'grade')
+
+        NEGATIVE = 'poor'
+        POSITIVE = 'average'
+        NEUTRAL = 'good'
+
+        grade[NEGATIVE] = fuzz.trimf(grade.universe, [0, 0, 50])
+        grade[NEUTRAL] = fuzz.trimf(grade.universe, [25, 50, 75])
+        #note: not sure if 25 50 75 is fine, done so because it makes it more sensitive. Or else alot of tweets would be neurtal
+        #grade[NEUTRAL] = fuzz.trimf(grade.universe, [0, 50, 100])
+        grade[POSITIVE] = fuzz.trimf(grade.universe, [50, 100, 100])
+
+        polarity.automf(3)
+        subjectivity.automf(3)
+
+
+        rule1 = ctrl.Rule(subjectivity[POSITIVE], grade[NEUTRAL])
+        
+        rule2 = ctrl.Rule(polarity[POSITIVE] & (subjectivity[NEUTRAL] | subjectivity[NEGATIVE]), grade[POSITIVE])
+        rule3 = ctrl.Rule(polarity[NEUTRAL] & (subjectivity[NEUTRAL] | subjectivity[NEGATIVE]), grade[NEUTRAL])
+        rule4 = ctrl.Rule(polarity[NEGATIVE] & (subjectivity[NEUTRAL] | subjectivity[NEGATIVE]), grade[NEGATIVE])
+
+
+        allRules = [rule1, rule2, rule3, rule4]
+
+        # assign the rules
+        sentiment_ctrl = ctrl.ControlSystem(allRules)
+        sentiment = ctrl.ControlSystemSimulation(sentiment_ctrl)
+
+        sentiment.input['polarity'] = curPolarity
+        sentiment.input['subjectivity'] = curSubjectivity
+
+
+        # Crunch the numbers
+        sentiment.compute()
+
+        sentimentGrade = sentiment.output['grade']
+        print("grade: " + str(sentimentGrade))
+
+        return sentimentGrade
+
     def _get_tweet_sentiment(self, tweet):
 
         # create TextBlob object of passed tweet text
-        analysis = TextBlob(self.clean_up_tweet(tweet))
+        analysis = TextBlob(self._clean_up_tweet(tweet))
         # set sentiment
-        if analysis.sentiment.polarity > 0:
+        #todo check subjectivity and apply fuzzy logic
+
+        tweetData = (analysis.sentiment.polarity, analysis.sentiment.subjectivity)
+        print(tweetData)
+        
+        tweetGrade = self._fuzzy_logic_get_tweet_grade(tweetData)
+
+        #can be changed for sensitivity
+        if (tweetGrade >= 60.0):
             return 'positive'
-        elif analysis.sentiment.polarity == 0:
+        elif ((tweetGrade < 60.0) & (tweetGrade > 40.0)):
             return 'neutral'
         else:
             return 'negative'
-  
+        
+    
+
     def _get_tweets(self, query, count, hoursAgo, minutesAgo, secondsAgo):
 
         # empty list to store parsed tweets
@@ -123,3 +186,4 @@ class SentimentAgent(BaseSignalAgent):
         except tweepy.errors.TweepyException as e:
             # print error (if any)
             print("Error : " + str(e))
+
