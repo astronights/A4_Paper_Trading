@@ -1,2 +1,0 @@
-"MAAgent","RandomAgent","BollingerAgent","MACRO_0","MACRO_1","MACRO_2","VaR","Action","Quantity","Price","Type","Timestamp","Open","High","Low","Close","Volume","Client_order_id","Status","Created_at","Updated_at","Symbol","Balance"
-0,-1,0,-783.5904680603219,37.30327510898855,-8.527188947660141,131.5501606210512,"sell",1,47232,"market","2022-03-29T04:12:00Z",47354.13,47363.15,47345.21,47363.15,4.03104171,"b74697b0-466b-4aac-95c9-c13aaf8200bf","filled","2022-03-29T04:13:17.890371655Z","2022-03-29T04:13:17.930691471Z","BTCUSD",100810

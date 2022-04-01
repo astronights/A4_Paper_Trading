@@ -29,6 +29,7 @@ class DeciderAgent(BaseAgent):
     def decide(self):
         self.lock.acquire()
         self.trade = {}
+        prev_balance = self.broker_agent.get_balance('cash')
         #TODO: Calculate action and quantity using some CBR
         weights = self.dao_agent.get_last_data(io_utils.Type.AGENT_WEIGHTS).to_dict()
         latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
@@ -39,13 +40,14 @@ class DeciderAgent(BaseAgent):
             self.trade[macro_val] = self.macroecon_agent.get_data_as_dict()[macro_val]
         self.trade['VaR'] = self.var_agent.get_latest_change()
         action = sum([weights[agent_name] * latest_actions[agent_name] for agent_name in weights.keys()])
-        self.trade['Action'] = 'buy' if action > 0.5 else ('sell' if action < -0.5 else 'none')
+        self.trade['Action'] = 'buy' if action > 0.25 else ('sell' if action < -0.25 else 'none')
         self.trade['Price'] = None
         self.trade['Type'] = 'market'
         self.trade['Quantity'] = self._update_with_cbr(self.trade)
         str_price = 'market price' if self.trade['Type'] == 'market' else str(self.trade['Price'])
         logging.info(f'{self.trade["Action"].title()} Trade Decided @ {str_price}')
-        self.ceo_agent.make_trade(self.trade)
+        self.trade = self.ceo_agent.make_trade(self.trade)
+        self.trade['Total_Balance'] = self.trade['Cash_Balance'] + (self.broker_agent.get_balance(constants.SYMBOL) * self.trade[constants.PRICE_COL])
         for agent in (self.signal_agents+[self.var_agent]):
             agent.updated = False
         self.updated = True

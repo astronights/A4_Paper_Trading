@@ -20,21 +20,18 @@ class VARAgent(BaseAgent):
 
     def var(self):
         self.lock.acquire()
-        data = self.broker_agent.ohlcv_data(constants.SYMBOL)
-        price = data[constants.PRICE_COL].iloc[-1]
+        df = self.broker_agent.ohlcv_data(constants.SYMBOL)
+        price = df[constants.PRICE_COL].iloc[-1]
 
-        periodic_ret = data[constants.PRICE_COL].pct_change().dropna().sort_values().reset_index(drop=True)
+        periodic_ret = df[constants.PRICE_COL].pct_change().dropna().sort_values().reset_index(drop=True)
         xth = int(np.floor(0.01*len(periodic_ret))) - 1
         xth_smallest_rate = periodic_ret[xth]
         mean_return_rate = periodic_ret.mean()
         VaR = price * (mean_return_rate - xth_smallest_rate)
         self.data.append(VaR)
         self.updated = True
-        logging.info('VaR Data updated')
+        logging.info(f'VaR Data updated {self.data[-1]}')
         self.lock.release()
 
-    def get_data_latest(self):
-        return(self.data[-1])
-
     def get_latest_change(self):
-        return 0 if len(self.data) < 2 else (self.data[-1]/self.data[-2] - 1.0)
+        return 0 if len(self.data) < 2 else ((self.data[-1]/self.data[-2]) - 1.0)

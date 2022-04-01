@@ -43,11 +43,12 @@ class SentimentAgent(BaseSignalAgent):
         tweets = self._get_tweets(query, twitter.NUM_TWEETS, hoursAgo, constants.TIMEFRAME, secondsAgo)
         if (len(tweets) >  0):
             sentiment = sum([t['sentiment'] for t in tweets])/len(tweets)
-            if(len(self.signals) == 0):
-                self.signals.append((1.0 if sentiment > 55.0 else -1.0 if sentiment < 45.0 else 0.0))
-            else:
-                sentiment_signal = 1.0 if sentiment > 50.0 else 0.0
-                self.signals.append(sentiment_signal - self.signals[-1])
+            # if(len(self.signals) == 0):
+            self.signals.append((1.0 if sentiment > 50.0 else -1.0))
+            # else:
+            #     sentiment_signal = 1.0 if sentiment > 50.0 else -1.0
+            #     new_signal = sentiment_signal - self.signals[-1]
+            #     self.signals.append(new_signal if abs(new_signal) < 2 else new_signal/2)
         else:
             self.signals.append(0.0)
         self.updated = True
