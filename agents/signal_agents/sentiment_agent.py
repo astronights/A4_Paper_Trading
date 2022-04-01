@@ -50,6 +50,7 @@ class SentimentAgent(BaseSignalAgent):
                 self.signals.append(sentiment_signal - self.signals[-1])
         else:
             self.signals.append(0.0)
+        self.updated = True
         logging.info(f'Sentiment Signal: {self.signals[-1]}')
         self.lock.release()
 

@@ -19,7 +19,7 @@ class DAOAgent():
         # Rows weights
         # Column agent name
         # Index timestamp
-        self.agent_weights = self.load_all_data(Type.AGENT_WEIGHTS)
+        self.agent_weights = self.load_all_data(Type.AGENT_WEIGHTS).tail(1)
         self.cbr_model = io_utils.load_pickle(os.path.join(constants.DATA_DIR, 'cbr.pkl'))
         logging.info(f'Created {self.__class__.__name__}')
 
@@ -69,12 +69,16 @@ class DAOAgent():
     def save_all_data(self):
         if(self.account_book is not None):
             account_book_path = os.path.join(constants.DATA_DIR, Type.ACCOUNT_BOOK.value)
-            df_to_csv(self.account_book, account_book_path)
+            old_df = csv_to_df(account_book_path)
+            updated_df = pd.concat([old_df, self.account_book], axis=0, copy=False)
+            df_to_csv(updated_df, account_book_path)
             logging.info(f'Saved {Type.ACCOUNT_BOOK}')
             self.account_book = self.account_book.loc[self.account_book['PNL'].last_valid_index()+1:,]
         if(self.agent_weights is not None):
             agent_weights_path = os.path.join(constants.DATA_DIR, Type.AGENT_WEIGHTS.value)
-            df_to_csv(self.agent_weights, agent_weights_path)
+            old_df = csv_to_df(agent_weights_path)
+            updated_df = pd.concat([old_df, self.agent_weights], axis=0, copy=False)
+            df_to_csv(updated_df, agent_weights_path)
             logging.info(f'Saved {Type.AGENT_WEIGHTS}')
         save_pickle(self.cbr_model, os.path.join(constants.DATA_DIR, 'cbr.pkl'))
         logging.info(f'Saved CBR Model')

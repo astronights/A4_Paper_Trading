@@ -1,5 +1,6 @@
 from agents.base_agent import BaseAgent
 import time
+import sys
 from config import constants
 from utils.io_utils import Type
 import logging
@@ -16,11 +17,14 @@ class PNLAgent(BaseAgent):
             self.calculate()
             time.sleep(constants.CYCLE)
 
+    def stop_trade(self):
+        self.dao_agent.save_all_data()
+
     def calculate(self):
         #TODO How to calculate PnL on every order?
         account_book = self.dao_agent.account_book
         cur_order_ids = account_book['Client_order_id'].to_list() if(account_book is not None) else []
-        orders = self.broker_agent.orders().sort(key = lambda order: order._raw['updated_at'])
+        orders = sorted(self.broker_agent.orders(), key = lambda order: order._raw['updated_at'])
         buy_stack = []
         pnl = 0.0
         for order in orders:
@@ -30,7 +34,7 @@ class PNLAgent(BaseAgent):
                     self.broker_agent.cancel_order(order_raw['id'])
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Status'] = 'cancelled'
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Updated_at'] = order_raw['updated_at']
-                else:
+                elif(order_raw['status'] == 'filled'):
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Status'] = order_raw['status']
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Updated_at'] = order_raw['updated_at']
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Price'] = float(order_raw['filled_avg_price'])
@@ -46,3 +50,7 @@ class PNLAgent(BaseAgent):
                         pnl = 0.0
                 logging.info(f'Updated order {order_raw["client_order_id"]}')
         self.dao_agent.add_full_df(account_book, Type.ACCOUNT_BOOK)
+        final_balance = self.broker_agent.get_balance('cash')
+        if((final_balance >= constants.START_CAPITAL*constants.TAKE_PROFIT) or (final_balance <= constants.START_CAPITAL*constants.STOP_LOSS)):
+            self.stop_trade()
+            logging.info(f'Stop trading at {final_balance}')

@@ -12,7 +12,7 @@ class CEOAgent():
     def make_trade(self, trade):
         latest_candle = self.broker_agent.latest_ohlcv(constants.SYMBOL)
         trade = self._update_trade_candle(trade, latest_candle)
-        if(trade['Action'] == 0):
+        if(trade['Action'] == 'none'):
             self._check_stop_loss_take_profit(trade, latest_candle)
         order = None
         trade_price = trade['Price'] if trade['Price'] is not None else latest_candle[constants.PRICE_COL]
@@ -27,7 +27,7 @@ class CEOAgent():
             else:
                 logging.info(f'Insufficient balance to buy {trade["Quantity"]} {constants.COIN} @ {trade_price}, available balance: {self.broker_agent.get_balance("cash")}')
         elif(trade['Action'] == 'sell'):
-            if(trade['Quantity'] <= self.broker_agent.get_balance(constants.SYMBOL)):
+            if(trade['Quantity'] <= self.broker_agent.get_balance(constants.SYMBOL) and trade['Quantity'] > 0):
                 if(trade['Type'] == 'market'):
                     order = self.broker_agent.market_sell_order(constants.SYMBOL, trade['Quantity'])
                 else:

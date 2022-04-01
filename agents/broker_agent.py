@@ -19,6 +19,7 @@ class BrokerAgent():
         self.ohlcv_mappings = {'t': 'Timestamp', 'o': 'Open', 'h': 'High', 'l': 'Low', 'c': 'Close', 'v': 'Volume'}
         logging.info('Established connection to Alpaca')
         logging.info(f'Created {self.__class__.__name__}')
+        constants.START_CAPITAL = self.get_balance('cash')
 
     def update_balance(self):
         self.account = self.api.get_account()._raw
