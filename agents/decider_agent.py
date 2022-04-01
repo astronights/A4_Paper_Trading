@@ -1,8 +1,8 @@
 from .base_agent import BaseAgent
 from config import constants
-import os
 import time
 import logging
+import pandas as pd
 from utils import io_utils
 
 class DeciderAgent(BaseAgent):
@@ -16,6 +16,7 @@ class DeciderAgent(BaseAgent):
         self.dao_agent = dao_agent
         self.ceo_agent = ceo_agent
         self.trade = {}
+        self.cbr_columns = ['Action', 'Quantity', 'Price', 'Balance', 'PNL']+[x.__str__() for x in self.signal_agents]+['MACRO_0', 'MACRO_1', 'MACRO_2', 'VaR']
         
     def run(self):
         while True:
@@ -56,7 +57,10 @@ class DeciderAgent(BaseAgent):
     def _update_with_cbr(self, trade):
         if(trade['Action'] == 'buy'):
             cbr_model = self.dao_agent.cbr_model
-            dir = cbr_model.predict(trade)[0]
+            cbr_trade = pd.DataFrame(trade, index=[0])
+            cbr_trade.drop(['Type'], axis=1, inplace=True)
+            cbr_trade.loc[0, 'Price'] = self.broker_agent.latest_ohlcv(constants.SYMBOL)[constants.PRICE_COL]
+            dir = cbr_model.predict(cbr_trade)[0]
             return(1.0-(float(dir)*constants.LEARNING_RATE/2))*constants.QUANTITY
         elif(trade['Action'] == 'sell'):
             return self.broker_agent.get_balance(constants.SYMBOL)
