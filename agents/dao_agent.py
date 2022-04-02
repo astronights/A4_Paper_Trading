@@ -69,11 +69,17 @@ class DAOAgent():
     def save_all_data(self):
         if(self.account_book is not None):
             account_book_path = os.path.join(constants.DATA_DIR, Type.ACCOUNT_BOOK.value)
-            old_df = csv_to_df(account_book_path)
-            updated_df = pd.concat([old_df, self.account_book], axis=0, copy=False)
+            updated_df = None
+            if(os.path.exists(account_book_path)):
+                old_df = csv_to_df(account_book_path)
+                updated_df = pd.concat([old_df, self.account_book], axis=0, copy=False)
+            else:
+                updated_df = self.account_book
             df_to_csv(updated_df, account_book_path)
             logging.info(f'Saved {Type.ACCOUNT_BOOK}')
-            self.account_book = self.account_book.loc[self.account_book['PNL'].last_valid_index()+1:,]
+            print(self.account_book)
+            self.account_book = self.account_book[self.account_book['PNL'].isnull()]
+            print(self.account_book)
         if(self.agent_weights is not None):
             agent_weights_path = os.path.join(constants.DATA_DIR, Type.AGENT_WEIGHTS.value)
             old_df = csv_to_df(agent_weights_path)

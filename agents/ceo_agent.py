@@ -37,12 +37,13 @@ class CEOAgent():
                 logging.info(f'Insufficient balance to sell {trade["Quantity"]} {constants.COIN} @ {trade_price}, available balance: {self.broker_agent.get_balance(constants.SYMBOL)}')
         else:
             logging.info(f'No trade action specified @ {latest_candle["Timestamp"]}')
-        trade['Cash_Balance'] = self.broker_agent.get_balance('cash')
+        trade['Balance'] = self.broker_agent.get_balance('cash')
         return(trade)
 
     def _update_trade_candle(self, trade, candle):
         for key in candle.keys():
             trade[key] = candle[key]
+        del trade['Timestamp']
         return(trade)
 
     def _populate_trade_order(self, trade, order):
@@ -56,6 +57,7 @@ class CEOAgent():
         trade['Created_at'] = u_order['created_at']
         trade['Updated_at'] = u_order['updated_at']
         trade['Symbol'] = u_order['symbol']
+        trade['Balance'] = self.broker_agent.get_balance('cash')
         return(trade)
 
     def _update_book(self, trade, order):
@@ -66,13 +68,13 @@ class CEOAgent():
 
     def _check_stop_loss_take_profit(self, trade, latest_candle):
         balance = self.broker_agent.get_balance('cash') + self.broker_agent.get_balance(constants.SYMBOL)*latest_candle[constants.PRICE_COL]
-        if(balance > (constants.START_CAPITAL*constants.TAKE_PROFIT)):
+        if(balance > (self.broker_agent.start_capital*constants.TAKE_PROFIT)):
             logging.info(f'Take profit and stop trading')
             trade['Action'] = 'sell'
             trade['Quantity'] = self.broker_agent.get_balance(constants.SYMBOL)
             trade['Type'] = 'limit'
             trade['Price'] = latest_candle[constants.PRICE_COL]
-        elif(balance < (constants.START_CAPITAL*constants.STOP_LOSS)):
+        elif(balance < (self.broker_agent.start_capital*constants.STOP_LOSS)):
             logging.info(f'Stop loss and stop trading')
             trade['Action'] = 'sell'
             trade['Quantity'] = self.broker_agent.get_balance(constants.SYMBOL)

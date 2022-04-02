@@ -7,18 +7,21 @@ import logging
 
 class PNLAgent(BaseAgent):
 
-    def __init__(self, broker_agent, dao_agent):
+    def __init__(self, broker_agent, dao_agent, backtesting_agent):
         super().__init__()
         self.broker_agent = broker_agent
         self.dao_agent = dao_agent
+        self.backtesting_agent = backtesting_agent
 
     def run(self):
         while True:
             self.calculate()
+            self.backtesting_agent.calculate()
             time.sleep(constants.CYCLE)
 
     def stop_trade(self):
         self.dao_agent.save_all_data()
+        sys.exit(0)
 
     def calculate(self):
         #TODO How to calculate PnL on every order?
@@ -30,6 +33,7 @@ class PNLAgent(BaseAgent):
         for order in orders:
             order_raw = order._raw
             if(order_raw['client_order_id'] in cur_order_ids):
+                logging.info(order_raw['updated_at'])
                 if(order_raw['status'] == 'accepted'):
                     self.broker_agent.cancel_order(order_raw['id'])
                     account_book.loc[account_book['Client_order_id']==order_raw['client_order_id'], 'Status'] = 'cancelled'
@@ -50,7 +54,8 @@ class PNLAgent(BaseAgent):
                         pnl = 0.0
                 logging.info(f'Updated order {order_raw["client_order_id"]}')
         self.dao_agent.add_full_df(account_book, Type.ACCOUNT_BOOK)
-        final_balance = self.broker_agent.get_balance('cash')
-        if((final_balance >= constants.START_CAPITAL*constants.TAKE_PROFIT) or (final_balance <= constants.START_CAPITAL*constants.STOP_LOSS)):
-            self.stop_trade()
+        final_balance = self.broker_agent.get_balance('cash') + (self.broker_agent.get_balance(constants.SYMBOL)*self.broker_agent.latest_ohlcv(constants.SYMBOL)[constants.PRICE_COL])
+        logging.info(f'{self.broker_agent.get_balance("cash")}, {self.broker_agent.get_balance(constants.SYMBOL)}')
+        if((final_balance >= self.broker_agent.start_capital*constants.TAKE_PROFIT) or (final_balance <= self.broker_agent.start_capital*constants.STOP_LOSS)):
             logging.info(f'Stop trading at {final_balance}')
+            self.stop_trade()

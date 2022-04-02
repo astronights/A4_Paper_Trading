@@ -22,14 +22,15 @@ class Controller():
         macroecon = macroecon_agent.MacroEconAgent()
         var = var_agent.VARAgent(broker)
 
-        pnl = pnl_agent.PNLAgent(broker, dao)
+        backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)
+
+        pnl = pnl_agent.PNLAgent(broker, dao, backtesting)
         ceo = ceo_agent.CEOAgent(broker, dao)
 
         decider = decider_agent.DeciderAgent(self.signal_agents, broker, macroecon, var, dao, ceo)
         powerbi = powerbi_agent.PowerBIAgent(decider)
 
-        backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)
-        self.periodic_agents.extend([macroecon, var, pnl, backtesting, decider, powerbi])
+        self.periodic_agents.extend([macroecon, var, pnl, decider, powerbi])
         logging.info('Registered agents')
 
     def start_agents(self):

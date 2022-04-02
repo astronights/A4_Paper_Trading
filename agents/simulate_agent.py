@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 import pandas as pd
 from config import constants
@@ -20,7 +21,7 @@ class SimulateAgent():
         self.capital = constants.START_CAPITAL
         self.alpha = alpha # learning rate
         self.pnl = []
-        self.tradebook = pd.DataFrame(columns=['Action', 'Quantity', 'Price', 'Balance', 'PNL']+self.signal_agent_names+self.macro_var)
+        self.tradebook = pd.DataFrame(columns=['Action', 'Quantity', 'Price', 'Balance', 'PNL']+sorted(self.signal_agent_names)+self.macro_var)
 
     def simulate(self):
         for index, row in self.data.iterrows():
@@ -67,6 +68,9 @@ class SimulateAgent():
                 continue
         print(f'Final PnL: {sum(self.pnl)}, Capital: {self.capital}, Crypto: {self.crypto} @ Price {self.data.iloc[-1]["Close"]}')
         print(f'Agent Weights: {self.agent_weights}')
+        for index, row in self.tradebook.iterrows():
+            if(math.isnan(row['PNL'])):
+                self.tradebook.loc[index:, 'PNL'] = (self.data.iloc[-1]["Close"] - row['Price'])*row['Quantity']
         self.save_data()
 
     def evaluate(self, sell_row, prev_rows):

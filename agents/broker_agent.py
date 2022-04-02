@@ -19,7 +19,8 @@ class BrokerAgent():
         self.ohlcv_mappings = {'t': 'Timestamp', 'o': 'Open', 'h': 'High', 'l': 'Low', 'c': 'Close', 'v': 'Volume'}
         logging.info('Established connection to Alpaca')
         logging.info(f'Created {self.__class__.__name__}')
-        constants.START_CAPITAL = self.get_balance('cash')
+        self.start_capital = self.get_balance('cash')
+        constants.START_CAPITAL = self.start_capital
 
     def update_balance(self):
         self.account = self.api.get_account()._raw
@@ -42,6 +43,8 @@ class BrokerAgent():
     def ohlcv_data(self, symbol, timeframe=constants.TIMEFRAME):
         ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), None, None, None, [alpaca.EXCHANGE]).df
         ohlcv.index = datetime_utils.convert_gmt_to_local(ohlcv.index)
+        if(len(ohlcv) < constants.LIMIT):
+            logging.warning(f'{len(ohlcv)}/{constants.LIMIT} bars for {symbol} available. Please rerun later...')
         ohlcv = ohlcv.iloc[-(constants.LIMIT+1):]
         ohlcv.drop(['exchange', 'trade_count', 'vwap'], axis=1, inplace=True)
         ohlcv.columns=['Open', 'High', 'Low', 'Close', 'Volume']
