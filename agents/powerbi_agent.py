@@ -35,6 +35,6 @@ class PowerBIAgent(BaseAgent):
                 url=powerbi.URL,
                 headers=self.headers,
                 data=json.dumps(json_data))
-
+            logging.info(f'PowerBI Response: {response.text}')
             logging.info('Updated data to PowerBI')
             self.lock.release() 

@@ -67,16 +67,17 @@ class CEOAgent():
         return(trade)
 
     def _check_stop_loss_take_profit(self, trade, latest_candle):
-        balance = self.broker_agent.get_balance('cash') + self.broker_agent.get_balance(constants.SYMBOL)*latest_candle[constants.PRICE_COL]
+        logging.info(f'{self.broker_agent.get_balance("cash")}, {self.broker_agent.get_balance(constants.SYMBOL)}')
+        balance = self.broker_agent.get_balance('cash') + (self.broker_agent.get_balance(constants.SYMBOL)*latest_candle[constants.PRICE_COL])
+        trade['Type'] = 'market'
         if(balance > (self.broker_agent.start_capital*constants.TAKE_PROFIT)):
             logging.info(f'Take profit and stop trading')
             trade['Action'] = 'sell'
             trade['Quantity'] = self.broker_agent.get_balance(constants.SYMBOL)
-            trade['Type'] = 'limit'
             trade['Price'] = latest_candle[constants.PRICE_COL]
         elif(balance < (self.broker_agent.start_capital*constants.STOP_LOSS)):
             logging.info(f'Stop loss and stop trading')
             trade['Action'] = 'sell'
             trade['Quantity'] = self.broker_agent.get_balance(constants.SYMBOL)
-            trade['Type'] = 'limit'
+            trade['Type'] = 'market'
             trade['Price'] = latest_candle[constants.PRICE_COL]

@@ -1,6 +1,7 @@
 from .base_agent import BaseAgent
 from config import constants
 import time
+from datetime import datetime
 import logging
 import random
 import pandas as pd
@@ -34,8 +35,8 @@ class DeciderAgent(BaseAgent):
         prev_balance = self.broker_agent.get_balance('cash')
         #TODO: Calculate action and quantity using some CBR
         weights = self.dao_agent.get_last_data(io_utils.Type.AGENT_WEIGHTS).to_dict()
-        latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
-        # latest_actions = dict([(agent.__str__(), float(random.randint(-1, 1))) for agent in self.signal_agents])
+        # latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
+        latest_actions = dict([(agent.__str__(), float(random.randint(-1, 1))) for agent in self.signal_agents])
         logging.info(f'Agent Signals: {latest_actions}')
         for agent_action in latest_actions.keys():
             self.trade[agent_action] = latest_actions[agent_action]
@@ -53,6 +54,9 @@ class DeciderAgent(BaseAgent):
         logging.info(f'{self.trade["Action"].title()} Trade Decided @ {str_price}')
         self.trade = self.ceo_agent.make_trade(self.trade)
         self.trade['Total_Balance'] = self.trade['Balance'] + (self.broker_agent.get_balance(constants.SYMBOL) * self.trade[constants.PRICE_COL])
+        self.trade['Timestamp'] = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
+        self.trade['Crypto'] = self.broker_agent.get_balance(constants.SYMBOL)
+        logging.info(f'{self.trade}')
         for agent in (self.signal_agents+[self.var_agent]):
             agent.updated = False
         self.updated = True
