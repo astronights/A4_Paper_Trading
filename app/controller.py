@@ -28,7 +28,7 @@ class Controller():
         ceo = ceo_agent.CEOAgent(broker, dao)
 
         decider = decider_agent.DeciderAgent(self.signal_agents, broker, macroecon, var, dao, ceo)
-        powerbi = powerbi_agent.PowerBIAgent(decider)
+        powerbi = powerbi_agent.PowerBIAgent(decider, broker)
 
         self.periodic_agents.extend([macroecon, var, pnl, decider, powerbi])
         logging.info('Registered agents')

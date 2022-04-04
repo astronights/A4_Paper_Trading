@@ -8,9 +8,10 @@ import logging
 
 class PowerBIAgent(BaseAgent):
     
-        def __init__(self, decider_agent):
+        def __init__(self, decider_agent, broker_agent):
             super().__init__()
             self.decider_agent = decider_agent
+            self.broker_agent = broker_agent
             self.headers = {"Content-Type": "application/json"}
     
         def run(self):
@@ -26,6 +27,9 @@ class PowerBIAgent(BaseAgent):
             self.lock.acquire()
             now = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
             trade = self.decider_agent.trade
+            trade['Start_Capital'] = self.broker_agent.start_capital
+            trade['Stop_Loss'] = trade['Start_Capital']*constants.STOP_LOSS
+            trade['Take_Profit'] = trade['Start_Capital']*constants.TAKE_PROFIT
             self.decider_agent.updated = False
             json_data = [trade]
 
