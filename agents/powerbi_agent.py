@@ -23,9 +23,9 @@ class PowerBIAgent(BaseAgent):
                     continue
     
         def update(self):
-            #TODO Build objects to send to powerBI
             self.lock.acquire()
-            now = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
+            
+            # Build objects to send to powerBI
             trade = self.decider_agent.trade
             trade['Start_Capital'] = self.broker_agent.start_capital
             trade['Stop_Loss'] = trade['Start_Capital']*constants.STOP_LOSS
@@ -33,7 +33,7 @@ class PowerBIAgent(BaseAgent):
             self.decider_agent.updated = False
             json_data = [trade]
 
-            #Send data to PowerBI Here
+            # Send data to PowerBI Here
             response = requests.request(
                 method="POST",
                 url=powerbi.URL,

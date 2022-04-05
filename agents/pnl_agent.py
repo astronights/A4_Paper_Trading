@@ -24,12 +24,18 @@ class PNLAgent(BaseAgent):
         sys.exit(0)
 
     def calculate(self):
-        #TODO How to calculate PnL on every order?
-        account_book = self.dao_agent.account_book
-        cur_order_ids = account_book['Client_order_id'].to_list() if(account_book is not None) else []
-        orders = sorted(self.broker_agent.orders(), key = lambda order: order._raw['updated_at'])
+        self.lock.acquire()
         buy_stack = []
         pnl = 0.0
+
+        # Get trades and order Ids
+        account_book = self.dao_agent.account_book
+        cur_order_ids = account_book['Client_order_id'].to_list() if(account_book is not None) else []
+
+        # Get Alpaca orders
+        orders = sorted(self.broker_agent.orders(), key = lambda order: order._raw['updated_at'])
+
+        # Iterate through orders and update order details
         for order in orders:
             order_raw = order._raw
             if(order_raw['client_order_id'] in cur_order_ids):
@@ -53,9 +59,15 @@ class PNLAgent(BaseAgent):
                         buy_stack = []
                         pnl = 0.0
                 logging.info(f'Updated order {order_raw["client_order_id"]}')
+
+        # Update account book
         self.dao_agent.add_full_df(account_book, Type.ACCOUNT_BOOK)
+
+        # Check stop loss and take profit and stop trading if conditions meet
         final_balance = self.broker_agent.get_balance('cash') + (self.broker_agent.get_balance(constants.SYMBOL)*self.broker_agent.latest_ohlcv(constants.SYMBOL)[constants.PRICE_COL])
         logging.info(f'{self.broker_agent.get_balance("cash")}, {self.broker_agent.get_balance(constants.SYMBOL)}')
         if((final_balance >= self.broker_agent.start_capital*constants.TAKE_PROFIT) or (final_balance <= self.broker_agent.start_capital*constants.STOP_LOSS)):
             logging.info(f'Stop trading at {final_balance}')
             self.stop_trade()
+
+        self.lock.release()
