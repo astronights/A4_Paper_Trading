@@ -15,24 +15,30 @@ class DAOAgent():
         # Column: Client_order_id, Action, Type, Price, Quantity, Status, Created_at, Updated_at, Symbol, Open, High, Low, Close, agent_weights, Balance
         # Index timestamp
         self.account_book = None
+
         # DataFrame consisting of the weights of the agents
         # Rows weights
         # Column agent name
         # Index timestamp
         self.agent_weights = self.load_all_data(Type.AGENT_WEIGHTS).tail(1)
+
+        # Logistic Regression CBR Model
         self.cbr_model = io_utils.load_pickle(os.path.join(constants.DATA_DIR, 'cbr.pkl'))
         logging.info(f'Created {self.__class__.__name__}')
 
     def get_historic_tradebook(self):
+        # Get historic trades
         return io_utils.csv_to_df(os.path.join(constants.DATA_DIR, 'tradebook.csv'))
 
     def add_full_df(self, data, type):
+        # Replace full dataframe with data
         if(type == Type.ACCOUNT_BOOK):
             self.account_book = data
         else:
             self.agent_weights = data
 
     def add_data(self, data, type):
+        # Add single row of data to dataframe. If dataframe is empty, create new dataframe
         now = datetime.now()
         if(type == Type.ACCOUNT_BOOK):
             if(self.account_book is None):
@@ -54,12 +60,14 @@ class DAOAgent():
                     self.agent_weights = df
 
     def get_last_data(self, type):
+        # Get latest row from dataframe
         if(type == Type.ACCOUNT_BOOK):
             return self.account_book.iloc[-1] if self.account_book is not None else self.load_last_data(Type.ACCOUNT_BOOK)
         else:
             return self.agent_weights.iloc[-1] if self.agent_weights is not None else self.load_last_data(Type.AGENT_WEIGHTS)
 
     def get_all_data(self, type):
+        # Get entire dataframe
         if(type == Type.ACCOUNT_BOOK):
             return self.account_book if self.account_book is not None else self.load_all_data(Type.ACCOUNT_BOOK)
         else:
@@ -67,6 +75,7 @@ class DAOAgent():
 
 
     def save_all_data(self):
+        # Save all data to files
         if(self.account_book is not None):
             account_book_path = os.path.join(constants.DATA_DIR, Type.ACCOUNT_BOOK.value)
             updated_df = None
@@ -90,6 +99,7 @@ class DAOAgent():
         logging.info(f'Saved CBR Model')
 
     def load_last_data(self, type):
+        # Get latest row from file
         path = os.path.join(constants.DATA_DIR, type.value)
         if os.path.exists(path):
             df = csv_to_df(path)
@@ -97,6 +107,7 @@ class DAOAgent():
         return None
 
     def load_all_data(self, type):
+        # Get entire dataframe from file
         path = os.path.join(constants.DATA_DIR, type.value)
         if os.path.exists(path):
             df = csv_to_df(path)

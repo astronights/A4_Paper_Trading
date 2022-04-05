@@ -22,14 +22,8 @@ class BrokerAgent():
         self.start_capital = self.get_balance('cash')
         constants.START_CAPITAL = self.start_capital
 
-    def update_balance(self):
-        self.account = self.api.get_account()._raw
-        try:
-            self.position = self.api.get_position('BTCUSD')._raw
-        except APIError:
-            self.position = {'qty': 0}
-
     def get_balance(self, symbol):
+        # Get Cash/BTC balance from Alpaca
         self.account = self.api.get_account()._raw
         try:
             self.position = self.api.get_position('BTCUSD')._raw
@@ -41,6 +35,7 @@ class BrokerAgent():
             return(float(self.position['qty']))
 
     def ohlcv_data(self, symbol, timeframe=constants.TIMEFRAME):
+        # Get OHLCV data on periods of time from Alpaca
         ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), None, None, None, [alpaca.EXCHANGE]).df
         ohlcv.index = datetime_utils.convert_gmt_to_local(ohlcv.index)
         if(len(ohlcv) < constants.LIMIT):
@@ -52,6 +47,7 @@ class BrokerAgent():
         return(ohlcv)
 
     def latest_ohlcv(self, symbol):
+        # Get latest OHLCV bar for the crypto from Alpaca
         latest = self.api.get_latest_crypto_bar(symbol, alpaca.EXCHANGE)._raw
         latest_ret = {}
         for key in self.ohlcv_mappings.keys():
@@ -59,40 +55,41 @@ class BrokerAgent():
         return(latest_ret)
 
     def ticker_price(self, symbol):
+        # Get current ticker price and average to get trading price
         quote = self.api.get_latest_crypto_quote(symbol, alpaca.EXCHANGE)._raw
         ticker = (float(quote['ap']) + float(quote['bp']))/2
         return(ticker)
         
     def market_buy_order(self, symbol, amount):
+        # Place market buy order
         res = self.api.submit_order(symbol, amount, 'buy')._raw
         return res
 
     def market_sell_order(self, symbol, amount):
+        # Place market sell order
         res = self.api.submit_order(symbol, amount, 'sell')._raw
         return res
 
     def limit_buy_order(self, symbol, amount, price):
+        # Place limit buy order
         res = self.api.submit_order(symbol, amount, 'buy', 'limit', 'day', price)._raw
         return res
 
     def limit_sell_order(self, symbol, amount, price):
+        # Place limit sell order
         res = self.api.submit_order(symbol, amount, 'sell', 'limit', 'day', price)._raw
         return res
 
     def orders(self, status='all'):
+        # Get all orders
         res = self.api.list_orders(status)
         return([] if res is None else res)
 
     def order_single(self, orderId):
+        # Get details for one order
         res = self.api.get_order_by_client_order_id(orderId)
         return res._raw
-        
-    def order_status(self, orderId):
-        res = self.api.get_order_by_client_order_id(orderId)
-        return res['status']
 
     def cancel_order(self, orderId):
+        # Cancel single order
         self.api.cancel_order(orderId)
-
-    # def reset_balance(self):
-    # TODO Manually

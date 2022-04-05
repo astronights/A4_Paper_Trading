@@ -10,6 +10,7 @@ class CEOAgent():
         logging.info(f'Created {self.__class__.__name__}')
 
     def make_trade(self, trade):
+        # Collect latest candlestick data and update trade price if needed, additionally verify stop loss and take profit
         latest_candle = self.broker_agent.latest_ohlcv(constants.SYMBOL)
         trade = self._update_trade_candle(trade, latest_candle)
         if(trade['Action'] == 'none'):
@@ -17,6 +18,8 @@ class CEOAgent():
         order = None
         trade_price = trade['Price'] if trade['Price'] is not None else latest_candle[constants.PRICE_COL]
         print(trade)
+
+        # Verify if equity value exists and if so, place order
         if(trade['Action'] == 'buy'):
             if(trade['Quantity']*trade_price < self.broker_agent.get_balance('cash')):
                 if(trade['Type'] == 'market'):
@@ -41,12 +44,14 @@ class CEOAgent():
         return(trade)
 
     def _update_trade_candle(self, trade, candle):
+        # Update fields in trade from latest candlestick
         for key in candle.keys():
             trade[key] = candle[key]
         del trade['Timestamp']
         return(trade)
 
     def _populate_trade_order(self, trade, order):
+        # Populate trade with results from Alpaca order
         u_order = self.broker_agent.order_single(order['client_order_id'])
         trade['Client_order_id'] = u_order['client_order_id']
         trade['Action'] = u_order['side']
@@ -61,12 +66,13 @@ class CEOAgent():
         return(trade)
 
     def _update_book(self, trade, order):
-        print(order)
+        # Save trade to account book
         trade = self._populate_trade_order(trade, order)
         self.dao_agent.add_data(trade, Type.ACCOUNT_BOOK)
         return(trade)
 
     def _check_stop_loss_take_profit(self, trade, latest_candle):
+        # Verify if stop loss or take profit has been reached and update trade accordingly
         logging.info(f'{self.broker_agent.get_balance("cash")}, {self.broker_agent.get_balance(constants.SYMBOL)}')
         balance = self.broker_agent.get_balance('cash') + (self.broker_agent.get_balance(constants.SYMBOL)*latest_candle[constants.PRICE_COL])
         trade['Type'] = 'market'

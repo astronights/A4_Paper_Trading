@@ -23,13 +23,15 @@ class BackTestingAgent(BaseAgent):
 
     def calculate(self):
         self.lock.acquire()
+
+        # Update agent weights and CBR algorithm if completed trades (Buy and sell) in account book
         account_book = self.dao_agent.account_book
         if(account_book is not None and 'PNL' in account_book.columns and account_book['PNL'].notna().any()):
             weights = self.dao_agent.agent_weights.iloc[-1].to_dict()
             done_trades = account_book[~account_book['PNL'].isnull()]
             new_weights = self._update_weights(weights, done_trades)
             self._save_weights(new_weights)
-            self.update_cbr(done_trades)
+            self._update_cbr(done_trades)
             self.dao_agent.save_all_data()
             logging.info('Recalculated weights and CBR')
         else:
@@ -37,6 +39,7 @@ class BackTestingAgent(BaseAgent):
         self.lock.release()
 
     def _update_weights(self, weights, done_trades):
+        # Update weights by increasing weights if profit making trades
         new_weights = weights.copy()
         for index, trade in done_trades.iterrows():
             is_profit = -1 if trade['PNL'] < 0 else 1
@@ -55,14 +58,18 @@ class BackTestingAgent(BaseAgent):
         return new_weights
 
     def _save_weights(self, weights):
+        # Save weights to database
         self.dao_agent.add_data(weights, Type.AGENT_WEIGHTS)
 
-    def update_cbr(self, account_book):
+    def _update_cbr(self, account_book):
+        # Collect historic trades, trades from previous cycles (old_trades) as well as trades in current cycle (new_trades)
         historic_trades = self.dao_agent.get_historic_tradebook()
         old_account_book = self.dao_agent.load_all_data(Type.ACCOUNT_BOOK)
         old_trades = None if old_account_book is None else old_account_book[self.cbr_columns+['PNL']]
         new_trades = account_book[self.cbr_columns+['PNL']]
         updated_trades = pd.concat([historic_trades, old_trades, new_trades], axis=0)
+
+        # Retrain CBR Model and save to database
         cbr = LogisticRegression(solver='liblinear')
         X, y = updated_trades.loc[:, updated_trades.columns != 'PNL'].copy(), updated_trades.loc[:, 'PNL'].copy()
         X.loc[:, 'Action'] = X['Action'].apply(lambda x: 1 if 'buy' else -1)
