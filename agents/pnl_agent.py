@@ -1,5 +1,6 @@
 from agents.base_agent import BaseAgent
 import time
+import os
 import sys
 from config import constants
 from utils.io_utils import Type
@@ -7,11 +8,12 @@ import logging
 
 class PNLAgent(BaseAgent):
 
-    def __init__(self, broker_agent, dao_agent, backtesting_agent):
+    def __init__(self, broker_agent, dao_agent, backtesting_agent, stop_function):
         super().__init__()
         self.broker_agent = broker_agent
         self.dao_agent = dao_agent
         self.backtesting_agent = backtesting_agent
+        self.stop_function = stop_function
 
     def run(self):
         while True:
@@ -21,7 +23,8 @@ class PNLAgent(BaseAgent):
 
     def stop_trade(self):
         self.dao_agent.save_all_data()
-        sys.exit(0)
+        self.stop_function()
+        os._exit(1)
 
     def calculate(self):
         self.lock.acquire()
