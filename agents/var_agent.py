@@ -24,7 +24,7 @@ class VARAgent(BaseAgent):
         price = df[constants.PRICE_COL].iloc[-1]
         periodic_ret = df[constants.PRICE_COL].pct_change().dropna().sort_values().reset_index(drop=True)
         xth = int(np.floor(0.01*len(periodic_ret))) - 1
-        xth_smallest_rate = periodic_ret[xth]
+        xth_smallest_rate = periodic_ret[max(xth, 0)]
         mean_return_rate = periodic_ret.mean()
         VaR = price * (mean_return_rate - xth_smallest_rate)
         self.data.append(VaR)

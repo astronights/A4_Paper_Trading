@@ -20,6 +20,7 @@ class BrokerAgent():
         logging.info('Established connection to Alpaca')
         logging.info(f'Created {self.__class__.__name__}')
         self.start_capital = self.get_balance('cash')
+        self.error_flag = False
         constants.START_CAPITAL = self.start_capital
 
     def get_balance(self, symbol):
@@ -38,8 +39,9 @@ class BrokerAgent():
         # Get OHLCV data on periods of time from Alpaca
         ohlcv = self.api.get_crypto_bars(symbol, TimeFrame(timeframe, TimeFrameUnit.Minute), None, None, None, [alpaca.EXCHANGE]).df
         ohlcv.index = datetime_utils.convert_gmt_to_local(ohlcv.index)
-        if(len(ohlcv) < constants.LIMIT):
-            logging.warning(f'{len(ohlcv)}/{constants.LIMIT} bars for {symbol} available. Please rerun later...')
+        if(len(ohlcv) < constants.LIMIT and self.error_flag == False):
+            logging.warning(f'{len(ohlcv)}/{constants.LIMIT} bars for {symbol} available. Might create errors...')
+            self.error_flag = True
         ohlcv = ohlcv.iloc[-(constants.LIMIT+1):]
         ohlcv.drop(['exchange', 'trade_count', 'vwap'], axis=1, inplace=True)
         ohlcv.columns=['Open', 'High', 'Low', 'Close', 'Volume']
