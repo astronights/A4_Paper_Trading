@@ -24,7 +24,7 @@ class Controller():
 
         backtesting = backtesting_agent.BackTestingAgent(self.signal_agents, dao)
 
-        pnl = pnl_agent.PNLAgent(broker, dao, backtesting)
+        pnl = pnl_agent.PNLAgent(broker, dao, backtesting, self.stop_agents)
         ceo = ceo_agent.CEOAgent(broker, dao)
 
         decider = decider_agent.DeciderAgent(self.signal_agents, broker, macroecon, var, dao, ceo)
