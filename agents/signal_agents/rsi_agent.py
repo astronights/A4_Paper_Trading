@@ -2,9 +2,7 @@ import time
 import logging
 import numpy as np
 from .base_signal_agent import BaseSignalAgent
-from threading import Thread
-from config import constants
-from config.constants import *
+from config import constants, signals
 
 class RSIAgent(BaseSignalAgent):
     
@@ -19,20 +17,20 @@ class RSIAgent(BaseSignalAgent):
 
     def signal(self):
         self.lock.acquire()
-        df = self.broker_agent.ohlcv_data(SYMBOL,TIMEFRAME)
+        df = self.broker_agent.ohlcv_data(constants.SYMBOL,constants.TIMEFRAME)
 
         #Calculate 14 day RSI value, ranges betweeen 0 to 100
         df['diff'] = df[constants.PRICE_COL].diff(1)
         df['gain'] = df['diff'].clip(lower=0).round(2)
         df['loss'] = df['diff'].clip(upper=0).round(2)
-        df['avg_gain'] = df['gain'].rolling(14).mean()
-        df['avg_loss'] = -df['loss'].rolling(14).mean()
+        df['avg_gain'] = df['gain'].rolling(signals.RSI_AVERAGE).mean()
+        df['avg_loss'] = -df['loss'].rolling(signals.RSI_AVERAGE).mean()
         df['rs'] = df['avg_gain'] / df['avg_loss']
         df['rsi'] = 100 - (100/(1.0 + df['rs']))
 
-        df['RSI_Sell_Signal'] = np.where(df['rsi'] >= constants.RSI_OVERBOUGHT, 1, 0)
+        df['RSI_Sell_Signal'] = np.where(df['rsi'] >= signals.RSI_OVERBOUGHT, 1, 0)
         df['RSI_Sell_Position'] = df['RSI_Sell_Signal'].diff()
-        df['RSI_Buy_Signal'] = np.where(df['rsi'] <= constants.RSI_OVERSOLD, 1, 0)
+        df['RSI_Buy_Signal'] = np.where(df['rsi'] <= signals.RSI_OVERSOLD, 1, 0)
         df['RSI_Buy_Position'] = df['RSI_Buy_Signal'].diff()
         if df.iloc[-1]['RSI_Buy_Position']==1:
             self.signals.append(1.0)

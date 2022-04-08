@@ -3,7 +3,6 @@ from config import constants
 import time
 from datetime import datetime
 import logging
-import random
 import pandas as pd
 from utils import io_utils
 
@@ -48,11 +47,11 @@ class DeciderAgent(BaseAgent):
         for macro_val in self.macroecon_agent.get_data_as_dict().keys():
             self.trade[macro_val] = self.macroecon_agent.get_data_as_dict()[macro_val]
         self.trade['VaR'] = self.var_agent.get_latest_change()
-        self.trade['Action'] = 'buy' if action > 0.25 else ('sell' if action < -0.25 else 'none')
+        self.trade['Action'] = 'buy' if action > constants.TRADE_THRESHOLD else ('sell' if action < -constants.TRADE_THRESHOLD else 'none')
         self.trade['Price'] = self.broker_agent.latest_ohlcv(constants.SYMBOL)[constants.PRICE_COL]
         self.trade['Type'] = 'market'
         self.trade['Quantity'] = constants.QUANTITY
-        self.trade['Balance'] = prev_balance + (1 if action > 0.25 else (-1 if action < -0.25 else 0)) * self.trade['Quantity'] * self.trade['Price']
+        self.trade['Balance'] = prev_balance + (1 if action > constants.TRADE_THRESHOLD else (-1 if action < -constants.TRADE_THRESHOLD else 0)) * self.trade['Quantity'] * self.trade['Price']
         self.trade['Quantity'] = self._update_with_cbr(self.trade)
 
         str_price = 'market price' if self.trade['Type'] == 'market' else str(self.trade['Price'])

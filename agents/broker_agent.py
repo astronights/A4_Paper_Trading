@@ -1,10 +1,7 @@
 from alpaca_trade_api.rest import REST, TimeFrame, TimeFrameUnit, APIError
 from alpaca_trade_api.common import URL
-from config import alpaca, constants, hitbtc
+from config import alpaca, constants
 from utils import datetime_utils
-# import ccxt
-import pandas as pd
-from datetime import datetime
 import logging
 
 class BrokerAgent():

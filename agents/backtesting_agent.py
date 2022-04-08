@@ -1,7 +1,6 @@
 from .base_agent import BaseAgent
 import time
 import logging
-import random
 from config import constants
 import pandas as pd
 import numpy as np

@@ -1,5 +1,4 @@
 import pickle
-import pandas as pd
 import pyarrow as pa
 import pyarrow.csv as csv
 from enum import Enum
