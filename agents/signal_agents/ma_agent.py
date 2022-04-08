@@ -19,7 +19,8 @@ class MAAgent(BaseSignalAgent):
     
     """
     Calculated SMA over 50 days(long) and EMA over 10 days(short)
-    Generate singnal 1 if 10 days EMA(short term or faster MA) is greater than 50 days SMA(long term or slower MA), else 0.    create a new column Position to store day-to-day difference of the Signal column. 
+    Generate singnal 1 if 10 days EMA(short term or faster MA) is greater than 50 days SMA(long term or slower MA), else 0.    
+    Create a new column Position to store day-to-day difference of the Signal column. 
     Position= 1,  Signal has changed from 0 to 1, (EMA_10) has crossed above SMA_50, a buy signal is generated
     Position= -1, Signal has changed from 1 to 0, (EMA_10) has crossed below SMA_50, a sell signal is generated
     """
