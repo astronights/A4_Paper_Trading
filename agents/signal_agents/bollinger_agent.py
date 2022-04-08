@@ -16,7 +16,15 @@ class BollingerAgent(BaseSignalAgent):
         while True:
             self.signal()
             time.sleep(constants.TICK)
-
+    
+    """
+         Calculated SMA over 20 days.
+         The top band(HIGH_band_20) is two standard deviations above the SMA.
+         The bottom band(LOW_Band_20) is two standard deviations below the SMA. 
+         The stock's closing prices generally stay near the middle of both Bollinger bands. 
+         When the price line hits the lower band, a buy signal is generated.
+         When the price line hits the higher band, a sell signal is generated.
+    """
     def signal(self):
         self.lock.acquire()
         df = self.broker_agent.ohlcv_data(SYMBOL,TIMEFRAME)
