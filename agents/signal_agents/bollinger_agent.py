@@ -6,24 +6,26 @@ from threading import Thread
 from config import constants
 from config.constants import *
 
+""" BollingerAgent class inherited from BaseSignalAgent """
 class BollingerAgent(BaseSignalAgent):
     
     def __init__(self, broker_agent):
         super().__init__()
         self.broker_agent = broker_agent
-
+    
+    """ Generate signal on every tick """
     def run(self):
         while True:
             self.signal()
             time.sleep(constants.TICK)
     
     """
-         Calculated SMA over 20 days.
-         The top band(HIGH_band_20) is two standard deviations above the SMA.
-         The bottom band(LOW_Band_20) is two standard deviations below the SMA. 
-         The stock's closing prices generally stay near the middle of both Bollinger bands. 
-         When the price line hits the lower band, a buy signal is generated.
-         When the price line hits the higher band, a sell signal is generated.
+    Calculated SMA over 20 days.
+    The top band(HIGH_band_20) is two standard deviations above the SMA.
+    The bottom band(LOW_Band_20) is two standard deviations below the SMA. 
+    The stock's closing prices generally stay near the middle of both Bollinger bands. 
+    When the price line hits the lower band, a buy signal is generated.
+    When the price line hits the higher band, a sell signal is generated.
     """
     def signal(self):
         self.lock.acquire()
