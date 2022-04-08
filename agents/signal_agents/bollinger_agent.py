@@ -2,9 +2,7 @@ import time
 import logging
 import numpy as np
 from .base_signal_agent import BaseSignalAgent
-from threading import Thread
-from config import constants
-from config.constants import *
+from config import constants, signals
 
 """ BollingerAgent class inherited from BaseSignalAgent """
 class BollingerAgent(BaseSignalAgent):
@@ -29,14 +27,14 @@ class BollingerAgent(BaseSignalAgent):
     """
     def signal(self):
         self.lock.acquire()
-        df = self.broker_agent.ohlcv_data(SYMBOL,TIMEFRAME)
-        df['SMA_20'] = df[constants.PRICE_COL].rolling(20).mean()
-        df['STD_20'] = df[constants.PRICE_COL].rolling(20).std()
-        df['LOW_Band_20'] = df['SMA_20'] - df['STD_20'] * 2
-        df['HIGH_Band_20'] = df['SMA_20'] + df['STD_20'] * 2
-        df['Sell_Signal'] = np.where(df[constants.PRICE_COL] >= df['HIGH_Band_20'], 1, 0)
+        df = self.broker_agent.ohlcv_data(constants.SYMBOL,constants.TIMEFRAME)
+        df['SMA'] = df[constants.PRICE_COL].rolling(signals.BOLLINGER).mean()
+        df['STD'] = df[constants.PRICE_COL].rolling(signals.BOLLINGER).std()
+        df['LOW_Band'] = df['SMA'] - df['STD'] * 2
+        df['HIGH_Band'] = df['SMA'] + df['STD'] * 2
+        df['Sell_Signal'] = np.where(df[constants.PRICE_COL] >= df['HIGH_Band'], 1, 0)
         df['Sell_Position'] = df['Sell_Signal'].diff()
-        df['Buy_Signal'] = np.where(df[constants.PRICE_COL] <= df['LOW_Band_20'], 1, 0)
+        df['Buy_Signal'] = np.where(df[constants.PRICE_COL] <= df['LOW_Band'], 1, 0)
         df['Buy_Position'] = df['Buy_Signal'].diff()
         if df.iloc[-1]['Buy_Position']==1:
             self.signals.append(1.0)

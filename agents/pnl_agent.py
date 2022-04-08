@@ -1,7 +1,6 @@
 from agents.base_agent import BaseAgent
 import time
 import os
-import sys
 from config import constants
 from utils.io_utils import Type
 import logging

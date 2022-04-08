@@ -1,6 +1,5 @@
 import sys
 import time
-import threading
 from app.controller import Controller
 
 def run():

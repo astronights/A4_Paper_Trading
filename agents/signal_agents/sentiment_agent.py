@@ -8,10 +8,8 @@ from config import twitter, constants
 from datetime import datetime, timedelta, timezone
 import logging
 
-#fuzzy logic
-import skfuzzy as fuzz
 import numpy as np
-from skfuzzy import control as ctrl
+from skfuzzy import control as ctrl, trimf as trimf
   
 class SentimentAgent(BaseSignalAgent):
     
@@ -19,13 +17,13 @@ class SentimentAgent(BaseSignalAgent):
         super().__init__()
         self.signals = []
         self.api = None
-        # attempt authentication
+        # Attempt authentication
         try:
-            # create OAuthHandler object
+            # Create OAuthHandler object
             self.auth = OAuthHandler(twitter.CONSUMER_KEY, twitter.CONSUMER_SECRET)
-            # set access token and secret
+            # Set access token and secret
             self.auth.set_access_token(twitter.ACCESS_TOKEN, twitter.ACCESS_TOKEN_SECRET)
-            # create tweepy API object to fetch tweets
+            # Create tweepy API object to fetch tweets
             self.api = tweepy.API(self.auth)
         except:
             logging.error("Error: Authentication Failed")
@@ -38,17 +36,11 @@ class SentimentAgent(BaseSignalAgent):
     def signal(self):
         self.lock.acquire()
         query = 'Bitcoin'
-        sentiment_signal = 0.0
         hoursAgo = secondsAgo = 0
         tweets = self._get_tweets(query, twitter.NUM_TWEETS, hoursAgo, constants.TIMEFRAME, secondsAgo)
         if (len(tweets) >  0):
             sentiment = sum([t['sentiment'] for t in tweets])/len(tweets)
-            # if(len(self.signals) == 0):
             self.signals.append((1.0 if sentiment > 50.0 else -1.0))
-            # else:
-            #     sentiment_signal = 1.0 if sentiment > 50.0 else -1.0
-            #     new_signal = sentiment_signal - self.signals[-1]
-            #     self.signals.append(new_signal if abs(new_signal) < 2 else new_signal/2)
         else:
             self.signals.append(0.0)
         self.updated = True
@@ -57,32 +49,31 @@ class SentimentAgent(BaseSignalAgent):
 
     def _get_tweets(self, query, count, hoursAgo, minutesAgo, secondsAgo):
 
-        # empty list to store parsed tweets
+        # Empty list to store parsed tweets
         tweets = []
-        earliest_time = datetime.now(timezone.utc)- timedelta(hours = hoursAgo, minutes = minutesAgo, seconds = secondsAgo)
+        earliest_time = datetime.now(timezone.utc) - timedelta(hours = hoursAgo, minutes = minutesAgo, seconds = secondsAgo)
         try:
-            # call twitter api to fetch tweets
-            #fetched_tweets = self.api.search_tweets(q = query, count = count, lang = "en", since_id = date_since)
+            # Call twitter api to fetch tweets
             fetched_tweets = tweepy.Cursor(self.api.search_tweets,q = query, lang = "en").items(count)
   
-            # parsing tweets one by one
+            # Parsing tweets one by one
             for tweet in fetched_tweets:
-                # getting the appropiate timeframe for tweets
+                # Getting the appropiate timeframe for tweets
                 
                 createdAt = tweet.created_at
-                #only accept tweets that are tweeted after the timeframe
+                # only accept tweets that are tweeted after the timeframe
                 if(earliest_time < createdAt):
 
-                    # empty dictionary to store required params of a tweet
+                    # Empty dictionary to store required params of a tweet
                     parsed_tweet = {}
-                    # saving text of tweet
+                    # Saving text of tweet
                     parsed_tweet['text'] = tweet.text
-                    # saving sentiment of tweet
+                    # Saving sentiment of tweet
                     parsed_tweet['sentiment'] = self._get_tweet_sentiment(tweet.text)
 
                     tweets.append(parsed_tweet)
   
-            # return parsed tweets
+            # Return parsed tweets
             return tweets
   
         except tweepy.errors.TweepyException as e:
@@ -90,9 +81,9 @@ class SentimentAgent(BaseSignalAgent):
 
     def _get_tweet_sentiment(self, tweet):
 
-        # create TextBlob object of passed tweet text
+        # Create TextBlob object of passed tweet text
         analysis = TextBlob(self._clean_up_tweet(tweet))
-        # set sentiment
+        # Set sentiment
         tweetData = (analysis.sentiment.polarity, analysis.sentiment.subjectivity)
         tweetGrade = self._fuzzy_logic_get_tweet_grade(tweetData)
 
@@ -117,15 +108,15 @@ class SentimentAgent(BaseSignalAgent):
 
         polarity.automf(3)
         
-        subjectivity['good'] = fuzz.trimf(subjectivity.universe, [0, 0, 0.5])
-        subjectivity['average'] = fuzz.trimf(subjectivity.universe, [0, 0.5, 1])
-        subjectivity['poor'] = fuzz.trimf(subjectivity.universe, [0.5, 1, 1])
+        subjectivity['good'] = trimf(subjectivity.universe, [0, 0, 0.5])
+        subjectivity['average'] = trimf(subjectivity.universe, [0, 0.5, 1])
+        subjectivity['poor'] = trimf(subjectivity.universe, [0.5, 1, 1])
 
-        strength['strongly_negative'] = fuzz.trimf(strength.universe, [0, 0, 25])
-        strength['negative'] = fuzz.trimf(strength.universe, [0, 25, 50])
-        strength['neutral'] = fuzz.trimf(strength.universe, [25, 50, 75])
-        strength['positive'] = fuzz.trimf(strength.universe, [50, 75, 100])
-        strength['strongly_positive'] = fuzz.trimf(strength.universe, [75, 100, 100])
+        strength['strongly_negative'] = trimf(strength.universe, [0, 0, 25])
+        strength['negative'] = trimf(strength.universe, [0, 25, 50])
+        strength['neutral'] = trimf(strength.universe, [25, 50, 75])
+        strength['positive'] = trimf(strength.universe, [50, 75, 100])
+        strength['strongly_positive'] = trimf(strength.universe, [75, 100, 100])
 
         rule1 = ctrl.Rule(polarity['poor'] & subjectivity['good'], strength['strongly_negative'])
         rule2 = ctrl.Rule(polarity['poor'] & subjectivity['average'], strength['negative'])
@@ -133,7 +124,7 @@ class SentimentAgent(BaseSignalAgent):
         rule4 = ctrl.Rule(polarity['good'] & subjectivity['average'], strength['positive'])
         rule5 = ctrl.Rule(polarity['good'] & subjectivity['good'], strength['strongly_positive'])
 
-        # assign the rules
+        # Assign the rules
         sentiment_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5])
         sentiment = ctrl.ControlSystemSimulation(sentiment_ctrl)
 

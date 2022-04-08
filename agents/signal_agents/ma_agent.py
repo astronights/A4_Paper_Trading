@@ -2,8 +2,7 @@ import time
 import logging
 import numpy as np
 from .base_signal_agent import BaseSignalAgent
-from threading import Thread
-from config import constants
+from config import constants, signals
 
 """ MAAgent class inherited from BaseSignalAgent """
 class MAAgent(BaseSignalAgent):
@@ -27,9 +26,9 @@ class MAAgent(BaseSignalAgent):
     def signal(self):
         self.lock.acquire()
         df = self.broker_agent.ohlcv_data(constants.SYMBOL)
-        df['EMA_10'] = df[constants.PRICE_COL].ewm(span=2, adjust = False).mean()
-        df['SMA_50'] = df[constants.PRICE_COL].rolling(50).mean()
-        df[f'MA_Position'] = np.where(df[f'EMA_10'] > df[f'SMA_50'], 1.0, 0.0)
+        df['EMA'] = df[constants.PRICE_COL].ewm(span=signals.EMA, adjust = False).mean()
+        df['SMA'] = df[constants.PRICE_COL].rolling(signals.SMA).mean()
+        df[f'MA_Position'] = np.where(df[f'EMA'] > df[f'SMA'], 1.0, 0.0)
         df[f'MA_Signal'] = df[f'MA_Position'].diff()
         df.drop([f'MA_Position'], axis=1, inplace=True)
         self.signals.append(df.iloc[-1][f'MA_Signal'])
