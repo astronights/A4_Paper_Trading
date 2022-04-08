@@ -2,6 +2,7 @@ from lib2to3.pytree import Base
 from agents.base_agent import BaseAgent
 from threading import Thread, Lock
 
+""" BaseSignalAgent class to facilitate signal agents"""
 class BaseSignalAgent(BaseAgent):
 
     def __init__(self):
