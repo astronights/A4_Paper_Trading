@@ -2,6 +2,7 @@ import sys
 import time
 from app.controller import Controller
 
+"""Run the controller of the MAS until keyboard interrupt"""
 def run():
     try:
         controller = Controller()

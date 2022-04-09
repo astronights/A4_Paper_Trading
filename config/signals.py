@@ -1,3 +1,4 @@
+# Signal Agent Parameters
 SMA=50
 EMA=10
 BOLLINGER=20

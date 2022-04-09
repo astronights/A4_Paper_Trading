@@ -10,6 +10,7 @@ class BaseSignalAgent(BaseAgent):
     def signal(self):
         pass
 
+    """ Return the latest value of the signal agent from the self.signals list """
     def latest(self):
         return self.signals[-1] if(len(self.signals) > 0) else 0
 

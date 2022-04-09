@@ -1,10 +1,11 @@
-TICK=60
-CYCLE=300
-LIMIT=300
+# MAS Trade Model Parameters
+TICK=60 # Seconds
+CYCLE=300 # Seconds
+LIMIT=300 # Seconds
 COIN='BTC'
 SYMBOL='BTCUSD'
-PRICE_COL='Close'
-TIMEFRAME=1 #In minutes
+PRICE_COL='Close' # (From OHLCV)
+TIMEFRAME=1 # Minutes
 DATA_DIR='data'
 TAKE_PROFIT=1.10
 STOP_LOSS=0.90

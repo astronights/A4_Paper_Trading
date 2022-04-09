@@ -6,6 +6,10 @@ import logging
 import pandas as pd
 from utils import io_utils
 
+"""
+Decider Agent to combine results from signal agents to generate trade
+CBR is used to evaluate trade quantity and trade is sent to CEO
+"""
 class DeciderAgent(BaseAgent):
 
     def __init__(self, signal_agents, broker_agent, macroecon_agent, var_agent, dao_agent, ceo_agent):
@@ -19,8 +23,10 @@ class DeciderAgent(BaseAgent):
         self.trade = {}
         self.cbr_columns = ['Action', 'Quantity', 'Price', 'Balance']+sorted([x.__str__() for x in self.signal_agents])+['MACRO_0', 'MACRO_1', 'MACRO_2', 'VaR']
         
+    """Run on every tick once latest data is available from all signal agents"""
     def run(self):
         while True:
+
             # Verify if all signal agents have generated a signal
             updated_signals = all([agent.updated for agent in (self.signal_agents+[self.macroecon_agent, self.var_agent])])
             if(updated_signals):
@@ -29,15 +35,21 @@ class DeciderAgent(BaseAgent):
             else:
                 continue
 
+    """
+    Use signal agents with agent weights to decide trade direction
+    Use CBR to decide quantity
+    Send order to CEO agent to evaluate
+    """
     def decide(self):
         self.lock.acquire()
         self.trade = {}
+
+        # Get previous balance before current tick
         prev_balance = self.broker_agent.get_balance('cash')
         
         # Compute Final Trade Direction based on agent signals and agent weights
         weights = self.dao_agent.get_last_data(io_utils.Type.AGENT_WEIGHTS).to_dict()
         latest_actions = dict([(agent.__str__(), agent.latest()) for agent in self.signal_agents])
-        # latest_actions = dict([(agent.__str__(), float(random.randint(-1, 1))) for agent in self.signal_agents])
         action = sum([weights[agent_name] * latest_actions[agent_name] for agent_name in weights.keys()])
         logging.info(f'Agent Signals: {latest_actions}')
 
@@ -70,9 +82,10 @@ class DeciderAgent(BaseAgent):
         self.updated = True
         self.lock.release()
         
+    """Update trade quantity with CBR model"""
     def _update_with_cbr(self, trade):
-        # Calculate trade quantity based on CBR model
-        # Decide quantity on buy trades using CBR and liquidate all crypto on sell trades
+
+        # Decide quantity on buy trades using CBR
         if(trade['Action'] == 'buy'):
             cbr_model = self.dao_agent.cbr_model
             cbr_trade = pd.DataFrame(trade, index=[0])
@@ -82,6 +95,8 @@ class DeciderAgent(BaseAgent):
             cbr_trade = cbr_trade[self.cbr_columns]
             dir = cbr_model.predict(cbr_trade)[0]
             return(1.0-(float(dir)*constants.LEARNING_RATE/2))*constants.QUANTITY
+        
+        # Liquidate position on sell trades
         elif(trade['Action'] == 'sell'):
             return self.broker_agent.get_balance(constants.SYMBOL)
         return(constants.QUANTITY)
