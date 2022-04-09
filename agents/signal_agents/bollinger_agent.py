@@ -18,7 +18,7 @@ class BollingerAgent(BaseSignalAgent):
             time.sleep(constants.TICK)
     
     """
-    Calculated SMA over 20 days.
+    Calculated SMA over 20 time periods.
     The top band(HIGH_band_20) is two standard deviations above the SMA.
     The bottom band(LOW_Band_20) is two standard deviations below the SMA. 
     The stock's closing prices generally stay near the middle of both Bollinger bands. 
