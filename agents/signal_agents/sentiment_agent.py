@@ -103,7 +103,7 @@ class SentimentAgent(BaseSignalAgent):
     """
     Fuzzy logic is applied using the tweets' polarities and subjectivities.
     Polarity refers to how positive the tweet is, a higher number means its more positive.
-    Subjectivity refers to how subjective(based on feelings) the tweet is, a higher number means tis more suibjective.
+    Subjectivity refers to how subjective(based on feelings) the tweet is, a higher number means it's more suibjective.
     The idea behind the fuzzy logic is that subjectivity influence how reliable the tweet's polarity is, therefore,
     a tweet with low subjectivity score is more ideal to generate a signal (both positive and negative),
     while a tweet with high subjectivity score is more prone to be ignored.
