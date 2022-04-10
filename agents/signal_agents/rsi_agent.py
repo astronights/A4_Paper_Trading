@@ -4,6 +4,7 @@ import numpy as np
 from .base_signal_agent import BaseSignalAgent
 from config import constants, signals
 
+""" RSIAgent class inherited from BaseSignalAgent """
 class RSIAgent(BaseSignalAgent):
     
     def __init__(self, broker_agent):

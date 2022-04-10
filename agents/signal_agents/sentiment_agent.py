@@ -10,7 +10,8 @@ import logging
 
 import numpy as np
 from skfuzzy import control as ctrl, trimf as trimf
-  
+
+""" SentimentAgent class inherited from BaseSignalAgent """
 class SentimentAgent(BaseSignalAgent):
     
     def __init__(self):
@@ -28,11 +29,15 @@ class SentimentAgent(BaseSignalAgent):
         except:
             logging.error("Error: Authentication Failed")
 
+    """ Generate signal on every tick """
     def run(self):
         while True:
             self.signal()
             time.sleep(constants.TICK)
 
+    """
+    Colelct tweets and return the average sentiment as a signal
+    """
     def signal(self):
         self.lock.acquire()
         query = 'Bitcoin'
@@ -47,9 +52,9 @@ class SentimentAgent(BaseSignalAgent):
         logging.info(f'Sentiment Signal: {self.signals[-1]}')
         self.lock.release()
 
-
-    # Getting the tweets required for the specified timeframe
+    """Getting the tweets required for the specified timeframe"""
     def _get_tweets(self, query, count, hoursAgo, minutesAgo, secondsAgo):
+
         # Empty list to store parsed tweets
         tweets = []
         earliest_time = datetime.now(timezone.utc) - timedelta(hours = hoursAgo, minutes = minutesAgo, seconds = secondsAgo)
@@ -62,6 +67,7 @@ class SentimentAgent(BaseSignalAgent):
                 # Getting the appropiate timeframe for tweets
                 
                 createdAt = tweet.created_at
+
                 # Only accept tweets that are tweeted after the timeframe
                 if(earliest_time < createdAt):
 
@@ -77,20 +83,23 @@ class SentimentAgent(BaseSignalAgent):
             # Return parsed tweets
             return tweets
   
+        # Log error if encountered
         except tweepy.errors.TweepyException as e:
             logging.error("Error : " + str(e))
 
-    # Getting the tweet's polarity and subjectivity with TextBlob
+    """Getting the tweet's polarity and subjectivity with TextBlob"""
     def _get_tweet_sentiment(self, tweet):
+
         # Create TextBlob object of passed tweet text
         analysis = TextBlob(self._clean_up_tweet(tweet))
+
         # Set sentiment
         tweetData = (analysis.sentiment.polarity, analysis.sentiment.subjectivity)
         tweetGrade = self._fuzzy_logic_get_tweet_grade(tweetData)
 
         return(tweetGrade)
   
-    # Cleaning the tweets for sentiment analysis
+    """Cleaning the tweets for sentiment analysis"""
     def _clean_up_tweet(self, txt):
          # Remove mentions, hashtags, retweets and urls
          txt = re.sub(r'@[A-Za-z0-9_]+', '', txt)
@@ -118,6 +127,7 @@ class SentimentAgent(BaseSignalAgent):
 
         polarity.automf(3)
         
+        # Apply subjectivity in reverse to prefer more objective tweets
         subjectivity['good'] = trimf(subjectivity.universe, [0, 0, 0.5])
         subjectivity['average'] = trimf(subjectivity.universe, [0, 0.5, 1])
         subjectivity['poor'] = trimf(subjectivity.universe, [0.5, 1, 1])
