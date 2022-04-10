@@ -86,6 +86,7 @@ class SimulateAgent():
                     self.capital = self.capital + (self.crypto * row['Close'])
                     self.crypto = 0.0
                     self.data.loc[index, 'Balance'] = self.capital
+
                     self._evaluate(self.data.loc[index], prev_rows)
                     self._update_tradebook(index, self.data.loc[index], prev_rows)
                 else:
@@ -94,7 +95,8 @@ class SimulateAgent():
                 continue
         print(f'Final PnL: {sum(self.pnl)}, Capital: {self.capital}, Crypto: {self.crypto} @ Price {self.data.iloc[-1]["Close"]}')
         print(f'Agent Weights: {self.agent_weights}')
-        
+        print(f'# Trades {len(self.tradebook)}')
+
         # Update final PnL for uncompleted trades (buys with no matching sell)
         for index, row in self.tradebook.iterrows():
             if(math.isnan(row['PNL'])):
