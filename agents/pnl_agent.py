@@ -84,7 +84,6 @@ class PNLAgent(BaseAgent):
 
         # Get cash + asset balance
         final_balance = self.broker_agent.get_balance('cash') + (self.broker_agent.get_balance(constants.SYMBOL)*self.broker_agent.latest_ohlcv(constants.SYMBOL)[constants.PRICE_COL])
-        logging.info(f'{self.broker_agent.get_balance("cash")}, {self.broker_agent.get_balance(constants.SYMBOL)}')
         
         # Check stop loss and take profit and stop trading if conditions meet
         if((final_balance >= self.broker_agent.start_capital*constants.TAKE_PROFIT) or (final_balance <= self.broker_agent.start_capital*constants.STOP_LOSS)):
