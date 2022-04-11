@@ -19,7 +19,7 @@ class BrokerAgent():
         logging.info(f'Created {self.__class__.__name__}')
 
         # Set initial variables
-        self.start_capital = self.get_balance('cash')
+        self.start_capital = self.get_balance('equity')
         constants.START_CAPITAL = self.start_capital
         self.error_flag = False
         self.account = None
@@ -28,6 +28,7 @@ class BrokerAgent():
     """
     Get current balance from Alpaca account
     Passing symbol 'cash' returns cash balance
+    Passing symbol 'equity' returns equity balance
     Passing symbol of the asset returns position balance
     """
     def get_balance(self, symbol):
@@ -38,8 +39,8 @@ class BrokerAgent():
             self.position = self.api.get_position('BTCUSD')._raw
         except APIError:
             self.position = {'qty': 0}
-        if(symbol == 'cash'):
-            return(float(self.account['cash']))
+        if(symbol == 'cash' or symbol == 'equity'):
+            return(float(self.account[symbol]))
         else:
             return(float(self.position['qty']))
 
