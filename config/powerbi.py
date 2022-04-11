@@ -1,0 +1,2 @@
+# PowerBI Streaming Dataset URL
+URL='https://api.powerbi.com/beta/5ba5ef5e-3109-4e77-85bd-cfeb0d347e82/datasets/0a33d7f9-c846-4063-bf26-6fffe952fde7/rows?key=V%2Bvk%2BEEuF78gWk8FVCQEpFNETJGTmX2eS%2F5B4npMyGn78Lb5%2Fy%2F0kx10INPFyOofZxdwAxchpZeoIBh%2FPEs1Ew%3D%3D'
