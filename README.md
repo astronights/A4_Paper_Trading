@@ -28,10 +28,15 @@ The technical indicators used include:
 - RSI
 - Sentiment Analysis
 - Value at Risk
+- Macroeconomic Data
 
 With the model outputs for the direction of movement, a dynamic mathemtical model is setup with a weighted basis to calculate the potential to BUY/SELL the asset at every tick.
 
 Live prices are fetched at every tick to assess past trade actions made and make online weight updates to the model creating a robust algorithm across market conditions.
+
+## Monitoring
+
+A PowerBI dashboard is also set up concurrently, which is pinged at every tick to monitor the algorithm performance, decision making ability and model weights.
 
 ## Group Members
 
