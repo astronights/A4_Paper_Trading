@@ -1,4 +1,4 @@
-# - MAS Algo-Trading Bot - IS5006 Project
+# MAS Algo-Trading Bot - IS5006 Project
 
 A Multi Agent System Trading Bot to maintain an active portfolio of BTC on a paper trading platform.
 
